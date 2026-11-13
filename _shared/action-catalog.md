@@ -1,0 +1,25 @@
+# Action catalog: every write the agent may plan
+
+The planner may only use the actions listed here. Each action names its real system, what the simulator must read before predicting anything, its reversibility class and its rollback. Code lives in `src/sba/adapters/`; one adapter per system, each implementing `read`, `simulate`, `execute`, `verify` and `compensate`.
+
+## Reversibility classes
+
+| Class | Meaning | Gate |
+|---|---|---|
+| `reversible` | the prior state can be restored exactly | snapshot before write |
+| `recallable` | can be withdrawn for a window, but the effect may already have been seen | hold queue + recall |
+| `compensable` | can't be undone; a new action can offset it | compensation drafted, needs approval |
+| `irreversible` | no undo and no automatic offset | always tier HIGH |
+
+## Actions
+
+| Action | System | Simulator reads | Class | Rollback / compensation |
+|---|---|---|---|---|
+| `refund_charge` | Stripe (test mode) | charge, existing refunds, disputes, currency | `irreversible` | draft re-charge request (customer consent required) |
+| `send_message` | Telegram Bot API | contact's chat id, language, opt-out flag, last delivery | `recallable` (48h) | 30s hold, then `deleteMessage`, then a correction message |
+| `update_contact_attributes` | CRM database | current attributes, automation rules matching the new values | `reversible` | restore snapshot |
+| `delete_contacts` | CRM database | contact, open tickets, linked conversations | `reversible` for 24h, then purge | undelete from snapshot before purge |
+
+## Selector rule
+
+Plans name targets by selector (for example `charges where duplicate_of is set and created on 2026-11-13`), never by a list the model typed. The simulator resolves selectors against live state with read-only calls; the resolved ids, and the fields read, form the state fingerprint.

@@ -1,0 +1,91 @@
+/* Navy-style look, written from scratch for this project.
+   Palette, type scale and rhythm match the reference; no source, images or copy are reused. */
+@import url("https://api.fontshare.com/v2/css?f[]=switzer@400,500,600,700,400i,600i&display=swap");
+
+:root {
+  --navy-950: #03051a;
+  --navy-900: #070c33;
+  --blue-600: #2d4ce4;
+  --blue-400: #7d93f3;
+  --blue-100: #e8ecfd;
+  --paper: #f8f7f4;
+  --card: #ffffff;
+  --surface: #eceae6;
+  --line: #e4e1db;
+  --ink: #1a1815;
+  --muted: #77746f;
+  --ok: #1f7a4d;
+  --warn: #a15c07;
+  --bad: #b4232c;
+  --radius: 6px;
+  --font: "Switzer", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+body, gradio-app, .gradio-container { background: var(--paper) !important; }
+.gradio-container { max-width: none !important; padding: 0 !important; margin: 0 !important; font-family: var(--font) !important; color: var(--ink); }
+.gradio-container > .main, .gradio-container .wrap, .contain { padding: 0 !important; max-width: none !important; }
+footer:not(.sba-footer) { display: none !important; }
+.sba-html, .sba-html > div { padding: 0 !important; margin: 0 !important; }
+
+/* Layout */
+.sba-wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+.sba-section { padding: 88px 0 24px; }
+.sba-eyebrow { font-size: 13px; letter-spacing: 0.02em; color: var(--muted); margin: 0 0 14px; }
+.sba-h2 { font-size: clamp(28px, 4vw, 40px); line-height: 1.08; letter-spacing: -0.035em; font-weight: 500; margin: 0 0 14px; color: var(--ink); }
+.sba-h2 em, .sba-hero h1 em { font-style: italic; font-weight: 700; color: inherit !important; }
+.sba-hero h1 { color: #fff !important; }
+.sba-h2 { color: var(--ink) !important; }
+.sba-lede { font-size: 16px; line-height: 1.55; color: var(--muted); max-width: 560px; margin: 0; }
+
+/* Hero */
+.sba-hero {
+  position: relative; overflow: hidden; color: #fff; padding-bottom: 72px;
+  background:
+    radial-gradient(60% 45% at 0% 62%, rgba(125, 147, 243, 0.55) 0%, rgba(125, 147, 243, 0) 70%),
+    linear-gradient(180deg, var(--navy-950) 0%, var(--navy-900) 34%, var(--blue-600) 60%, var(--blue-400) 76%, var(--blue-100) 90%, var(--paper) 100%);
+}
+.sba-nav { display: flex; align-items: center; justify-content: space-between; height: 72px; }
+.sba-brand { font-weight: 700; letter-spacing: -0.02em; font-size: 18px; color: #fff; text-decoration: none; }
+.sba-links { display: flex; gap: 24px; }
+.sba-links a { color: rgba(255, 255, 255, 0.86); text-decoration: none; font-size: 14px; }
+.sba-links a:hover { color: #fff; }
+.sba-btn-dark { display: inline-block; background: rgba(3, 5, 26, 0.85); color: #fff; border: 1px solid rgba(255, 255, 255, 0.16); border-radius: var(--radius); padding: 8px 14px; font-size: 13px; text-decoration: none; }
+.sba-hero-copy { padding: 30vh 0 18vh; max-width: 640px; margin: 0 auto; }
+.sba-hero h1 { font-size: clamp(36px, 6vw, 56px); line-height: 1.02; letter-spacing: -0.045em; font-weight: 500; margin: 0; color: #fff; }
+.sba-hero-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; color: #4d4b47; }
+.sba-hero-foot p { max-width: 400px; font-size: 15px; line-height: 1.5; margin: 0; }
+.sba-hero-foot a { color: var(--ink); font-weight: 500; text-decoration: none; font-size: 15px; }
+
+/* Cards and grids */
+.sba-grid { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; margin-top: 40px; }
+.sba-grid-5 { grid-template-columns: repeat(5, 1fr); }
+.sba-grid-4 { grid-template-columns: repeat(4, 1fr); }
+.sba-cell { background: var(--card); padding: 22px 20px 26px; }
+.sba-cell h3 { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; margin: 10px 0 6px; color: var(--ink); }
+.sba-cell p { font-size: 14px; line-height: 1.5; color: var(--muted); margin: 0; }
+.sba-step { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.sba-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 3px 8px; border-radius: 999px; background: var(--surface); color: var(--ink); }
+.sba-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); }
+.sba-pill.ok .sba-dot { background: var(--ok); }
+.sba-pill.off .sba-dot { background: var(--warn); }
+
+/* Try-it panel (Gradio components) */
+.sba-panel { max-width: 1120px; margin: 24px auto 0 !important; padding: 24px !important; background: var(--card) !important; border: 1px solid var(--line) !important; border-radius: var(--radius) !important; }
+.sba-panel textarea { font-family: var(--font) !important; font-size: 15px !important; }
+.sba-note { font-size: 13px; color: var(--muted); }
+
+/* Footer */
+.sba-footer { border-top: 1px solid var(--line); margin-top: 96px; padding: 28px 0 40px; display: flex; justify-content: space-between; gap: 16px; font-size: 13px; color: var(--muted); }
+.sba-footer a { color: var(--muted); }
+
+@media (max-width: 860px) {
+  .sba-wrap { padding: 0 16px; }
+  .sba-panel { margin: 24px 16px 0 !important; padding: 16px !important; }
+  .sba-links { display: none; }
+  .sba-grid-5, .sba-grid-4 { grid-template-columns: 1fr 1fr; }
+  .sba-hero-copy { padding: 18vh 0 12vh; }
+  .sba-hero-foot { flex-direction: column; align-items: flex-start; }
+}
+@media (max-width: 520px) {
+  .sba-grid-5, .sba-grid-4 { grid-template-columns: 1fr; }
+}

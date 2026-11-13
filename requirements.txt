@@ -1,0 +1,2 @@
+# Render and local installs: dependencies live in pyproject.toml
+-e .[dev]

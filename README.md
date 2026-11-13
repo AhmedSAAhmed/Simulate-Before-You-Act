@@ -1,0 +1,43 @@
+# Simulate Before You Act
+
+An agent that thinks through consequences before it changes anything. Every write (a refund, a mass message, a data deletion) is first simulated against the real systems. A person sees the projected effects, side effects, who is affected and the rollback path, and approves, tweaks or rejects it in one step. Execution then runs only the approved plan, against the state it was simulated on, and checks what actually happened against what was predicted.
+
+Built for DOO's Builders League challenge *Simulate Before You Act*.
+
+> Status: Phase 0, walking skeleton. See [docs/execution-plan.md](docs/execution-plan.md).
+
+## Pipeline
+
+`01 intent → 02 simulate → 03 present → 04 execute → 05 verify`. Each stage ends at a check, and a failed check stops the run. Stage contracts are in [stages/](stages/); the entry point for agents is [AGENTS.md](AGENTS.md).
+
+## Real systems
+
+| System | Used for | Mode |
+|---|---|---|
+| Stripe | refunds (moves money) | test mode |
+| Telegram Bot API | customer messages (mass message) | real bot |
+| Postgres CRM (DOO-shaped) | contact attributes, deletion | Neon, or SQLite locally |
+| Groq / OpenRouter / Gemini | planner, critic, narrator | real APIs |
+
+## Quickstart
+
+```bash
+python -m venv .venv
+.venv/Scripts/python -m pip install -r requirements.txt
+cp .env.example .env    # then fill in keys: docs/setup.md
+.venv/Scripts/python scripts/check_setup.py
+.venv/Scripts/python -m pytest
+.venv/Scripts/python -m sba    # http://localhost:7860
+```
+
+On macOS or Linux use `.venv/bin/python`.
+
+## Deliverables
+
+| Deliverable | Where |
+|---|---|
+| Live demo | added when deployed |
+| Architecture snapshot | `docs/architecture.md` (Phase 6) |
+| Failure test | `docs/failure-test.md` (Phase 4) |
+| Two-year thesis | `docs/thesis.md` (Phase 6) |
+| 90-second walkthrough | added when recorded |
