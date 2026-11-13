@@ -59,15 +59,17 @@ class Effect(_Frozen):
     action_index: int
     system: str
     record_id: str
+    subject: str = Field(description="Who or what is affected, as a person reads it")
     before: dict[str, Any]
     after: dict[str, Any]
 
 
 class Blocker(_Frozen):
-    action_index: int
+    action_index: int = Field(description="-1 for a plan-level limit")
     record_id: str
     rule: str
     detail: str
+    hard: bool = Field(default=False, description="True: only excluding the item resolves it; no override")
 
 
 class SideEffect(_Frozen):
@@ -84,8 +86,9 @@ class Simulation(_Frozen):
     blockers: tuple[Blocker, ...] = ()
     impacted: tuple[str, ...] = ()
     rollback: tuple[str, ...] = ()
+    notes: tuple[str, ...] = Field(default=(), description="Items left out or included, and why")
     tier: Tier
-    totals: dict[str, float] = Field(default_factory=dict)
+    totals: dict[str, Any] = Field(default_factory=dict)
 
 
 class Decision(_Frozen):

@@ -20,6 +20,15 @@ The planner may only use the actions listed here. Each action names its real sys
 | `update_contact_attributes` | CRM database | current attributes, automation rules matching the new values | `reversible` | restore snapshot |
 | `delete_contacts` | CRM database | contact, open tickets, linked conversations | `reversible` for 24h, then purge | undelete from snapshot before purge |
 
-## Selector rule
+## Selectors and parameters
 
-Plans name targets by selector (for example `charges where duplicate_of is set and created on 2026-11-13`), never by a list the model typed. The simulator resolves selectors against live state with read-only calls; the resolved ids, and the fields read, form the state fingerprint.
+Plans name targets by selector, never by a list of ids the model typed. The simulator resolves selectors against live state with read-only calls; the resolved ids, and every field read, form the state fingerprint. Unknown keys are refused.
+
+| Action | `selector` | `params` |
+|---|---|---|
+| `issue_credit` | `charges_created_on: "YYYY-MM-DD"`, `duplicates_only: true` | none; the amount is always what's left of the duplicate |
+| `send_message` | `from_action: <earlier index>` | `templates: {en, ar}` with only `{name}` and `{amount}` placeholders |
+| `update_contact_attributes` | `from_action: <index>` or `label: "<label>"` | `add_labels`, `remove_labels` |
+| `delete_contacts` | `label: "<label>"` | none |
+
+Every action also accepts the operator's tweaks: `exclude: [record ids]` and `override: {record id: reason}` (an automation rule's id is `rule:<id>`).

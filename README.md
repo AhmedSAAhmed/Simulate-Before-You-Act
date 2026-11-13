@@ -4,7 +4,7 @@ An agent that thinks through consequences before it changes anything. Every writ
 
 Built for DOO's Builders League challenge *Simulate Before You Act*.
 
-> Status: Phase 0, walking skeleton. See [docs/execution-plan.md](docs/execution-plan.md).
+> Status: Phase 1 done. The CRM, the adapters and the simulation engine run against Neon and Telegram; the planner, executor and review UI come next. See [docs/execution-plan.md](docs/execution-plan.md).
 
 ## Pipeline
 
@@ -26,6 +26,8 @@ python -m venv .venv
 cp .env.example .env    # then fill in keys: docs/setup.md
 .venv/Scripts/python scripts/check_setup.py
 .venv/Scripts/python -m pytest
+.venv/Scripts/python scripts/seed_demo.py                  # load the double-charge scenario
+.venv/Scripts/python scripts/simulate_demo.py --resolved   # see the prediction; writes nothing
 .venv/Scripts/python -m sba    # http://localhost:7860
 ```
 

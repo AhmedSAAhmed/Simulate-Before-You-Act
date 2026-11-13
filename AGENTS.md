@@ -33,6 +33,8 @@ A DOO-style ops copilot that simulates every write against real systems (Telegra
 - Run: `python -m sba` (serves on `http://localhost:7860`)
 - Test: `python -m pytest`
 - Check keys: `python scripts/check_setup.py`
+- Reset the demo data: `python scripts/seed_demo.py`
+- Simulate the demo plan (writes nothing): `python scripts/simulate_demo.py [--resolved] [--blind automations]`
 
 ## The one rule
 

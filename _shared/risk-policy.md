@@ -22,13 +22,19 @@ Enforced in code (`src/sba/domain/policy.py`). The LLM can't change any value he
 
 ## Blockers (Approve stays disabled until each is resolved in the plan)
 
-- the charge has already been credited, fully or partly
-- the charge is disputed with the bank (a credit would pay the customer twice)
-- the recipient opted out or has no Telegram chat
-- a contact to delete has an open ticket
-- a new attribute value matches an automation rule (the side effect must be shown and accepted)
+| Blocker | Resolve by |
+|---|---|
+| the charge is partly credited already | exclude it, or include it with a reason (only the remainder is credited) |
+| the charge is disputed with the bank (a credit would pay twice) | exclude it, or include it with a reason |
+| a contact to delete has an open ticket | exclude it, or include it with a reason |
+| a new label matches an automation rule (the side effect is shown) | accept the rule with a reason, or change the labels |
+| the recipient opted out, has no Telegram chat, or the bot can't reach the chat | **hard**: exclude only |
+| Telegram couldn't be reached to check a chat | **hard**: simulate again |
+| a plan-level limit above, or credits in more than one currency | **hard**: exclude items until under the limit |
 
-Resolving a blocker means excluding the item or including it with a written reason. Both edit the plan, which changes its hash and re-runs 02_simulate.
+A charge already **fully** credited isn't a blocker: it's left out automatically, and the notes say why.
+
+Resolving a blocker edits the plan (`params.exclude`, or `params.override` with a written reason), which changes its hash and re-runs 02_simulate.
 
 ## Canary and circuit breaker
 

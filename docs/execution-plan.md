@@ -153,6 +153,8 @@ Simulate-Before-You-Act/
 
 Each phase ends at a check, in the ICM style. Nothing moves on until the check passes.
 
+**Progress (2026-11-14):** P0 done, except the Render deploy, which is the owner's step. P1 done: the live simulation on Neon reproduces the hand-computed numbers (`tests/test_simulator_scenario.py`), and 25 tests pass. A live run also caught a real bug: network errors were reported as "customer blocked the bot". That's now fixed, with a regression test.
+
 | Phase | Dates | Work | Exit check |
 |---|---|---|---|
 | **P0 Setup + walking skeleton** | Nov 14–16 | Answer the open questions; `git init`, set the repo-local git identity, first push; ICM skeleton (AGENTS.md, CONTEXT.md, stage contracts); install ECC/ICM locally in `.claude/`; Telegram bot; Neon DB; **deploy a hello-world Gradio+FastAPI to Render on day 1** | Live URL serves `/healthz`; clean clone runs `pytest`; `links.py` passes |

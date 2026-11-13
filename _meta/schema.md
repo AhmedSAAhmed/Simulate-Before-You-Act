@@ -5,10 +5,14 @@ The Pydantic models in `src/sba/domain/models.py` are the single source of truth
 | Artifact | Model | Key fields |
 |---|---|---|
 | `plan.json` | `ActionPlan` | `run_id`, `request`, `actions[]` (each: `kind`, `selector`, `params`, `reason`) |
-| `simulation.json` | `Simulation` | `plan_hash`, `state_fingerprint`, `effects[]`, `side_effects[]`, `blockers[]`, `impacted`, `rollback[]`, `tier`, `totals` |
+| `simulation.json` | `Simulation` | `plan_hash`, `state_fingerprint`, `effects[]` (each: `action_index`, `system`, `record_id`, `subject`, `before`, `after`), `side_effects[]`, `blockers[]` (each: `rule`, `detail`, `hard`), `impacted`, `rollback[]`, `notes[]`, `tier`, `totals` |
 | `decision.json` | `Decision` | `verdict` (`approve`/`reject`), `plan_hash`, `state_fingerprint`, `approver`, `decided_at`, `expires_at` |
 | `journal.json` | `Journal` | `entries[]` (each: `action_index`, `item_id`, `idempotency_key`, `status`, `snapshot_ref`, `external_ref`) |
 | `verification.json` | `Verification` | `predicted`, `observed`, `diffs[]`, `invariants[]`, `outcome` (`match`/`halted`/`rolled_back`) |
+
+## Money and totals
+
+Money is always integer minor units (`amount_minor`; BHD has 3 decimals, so 12.500 BHD is `12500`). Only `sba.domain.money.fmt` turns it into text. `totals` holds `credits`, `credit_total_minor`, `currency`, `messages`, `label_changes` and `deletions`.
 
 ## Hashing
 
