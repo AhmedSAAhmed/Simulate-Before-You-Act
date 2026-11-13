@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class ActionKind(StrEnum):
-    REFUND_CHARGE = "refund_charge"
+    ISSUE_CREDIT = "issue_credit"
     SEND_MESSAGE = "send_message"
     UPDATE_CONTACT_ATTRIBUTES = "update_contact_attributes"
     DELETE_CONTACTS = "delete_contacts"
@@ -30,7 +30,7 @@ class Tier(StrEnum):
 
 
 REVERSIBILITY: dict[ActionKind, Reversibility] = {
-    ActionKind.REFUND_CHARGE: Reversibility.IRREVERSIBLE,
+    ActionKind.ISSUE_CREDIT: Reversibility.COMPENSABLE,
     ActionKind.SEND_MESSAGE: Reversibility.RECALLABLE,
     ActionKind.UPDATE_CONTACT_ATTRIBUTES: Reversibility.REVERSIBLE,
     ActionKind.DELETE_CONTACTS: Reversibility.REVERSIBLE,

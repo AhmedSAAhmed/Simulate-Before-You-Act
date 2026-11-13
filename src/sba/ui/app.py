@@ -8,7 +8,7 @@ from sba.config import settings
 from sba.ui import sections
 
 EXAMPLE_REQUEST = (
-    "Refund everyone who was double-charged yesterday, apologize on Telegram in their language, "
+    "Credit back everyone who was double-charged yesterday, apologize on Telegram in their language, "
     "and tag them dup-charge-2026-11."
 )
 

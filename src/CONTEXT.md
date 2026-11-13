@@ -5,7 +5,7 @@ One package, `sba`. Each stage in [../CONTEXT.md](../CONTEXT.md) maps to one mod
 | Module | Holds | Stage |
 |---|---|---|
 | `sba/domain/` | models, hashing, policy | all |
-| `sba/adapters/` | Stripe, Telegram, CRM database; each has `read`, `simulate`, `execute`, `verify`, `compensate` | 02, 04, 05 |
+| `sba/adapters/` | Telegram; CRM database (contacts, charges, wallet ledger); each has `read`, `simulate`, `execute`, `verify`, `compensate` | 02, 04, 05 |
 | `sba/agents/` | planner, simulator, critic, executor, verifier | 01–05 |
 | `sba/llm/` | provider router (Groq, OpenRouter, Gemini), budget cap | 01–03 |
 | `sba/store/` | run ledger, approvals, journal | 03–05 |

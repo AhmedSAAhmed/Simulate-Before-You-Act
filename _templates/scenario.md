@@ -6,7 +6,7 @@ kind: {happy-path | blocker | drift | unmodeled-side-effect}
 # Scenario: {short name}
 
 ## Seed
-{what `scripts/seed_demo.py` creates: charges, contacts, automations}
+{what `scripts/seed_demo.py` creates: contacts, charges, wallets, automations}
 
 ## Request
 {the operator's words}

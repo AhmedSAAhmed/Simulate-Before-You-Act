@@ -1,6 +1,6 @@
 # Simulate Before You Act: agent entry
 
-A DOO-style ops copilot that simulates every write against real systems (Stripe test mode, Telegram, a CRM database) and executes only what a person approved, bound to that exact simulation. What leaves this workspace: a deployed demo, a run ledger per action, and the challenge deliverables in `docs/`.
+A DOO-style ops copilot that simulates every write against real systems (Telegram, and a Postgres CRM with a wallet ledger) and executes only what a person approved, bound to that exact simulation. What leaves this workspace: a deployed demo, a run ledger per action, and the challenge deliverables in `docs/`.
 
 ## Where things live
 

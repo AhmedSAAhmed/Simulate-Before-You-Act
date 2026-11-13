@@ -31,7 +31,7 @@ def hero() -> str:
       <h1>See what your agent will <em>change</em> before it acts</h1>
     </div>
     <div class="sba-hero-foot">
-      <p>Every refund, message and deletion is simulated against the real systems first, then runs only
+      <p>Every credit, message and deletion is simulated against the real systems first, then runs only
       exactly as you approved it.</p>
       <a href="#pipeline">How it works&nbsp;&rsaquo;</a>
     </div>

@@ -6,8 +6,8 @@ Enforced in code (`src/sba/domain/policy.py`). The LLM can't change any value he
 
 | Limit | Value |
 |---|---|
-| refund per customer | ≤ the duplicate charge amount |
-| refund total per plan | ≤ 5,000.00 in the account currency |
+| credit per customer | ≤ the duplicate charge amount |
+| credit total per plan | ≤ 5,000.00 in the account currency |
 | message recipients per plan | ≤ 500 |
 | contacts deleted per plan | ≤ 50 |
 | approval lifetime | 10 minutes |
@@ -18,12 +18,12 @@ Enforced in code (`src/sba/domain/policy.py`). The LLM can't change any value he
 |---|---|---|
 | LOW | every action `reversible`, ≤ 10 records | approve, then run |
 | MEDIUM | any `recallable` action, or > 10 records | approve, then canary first |
-| HIGH | any `irreversible` money movement, > 50 recipients, or any deletion | approve, canary first, halt on the first divergence |
+| HIGH | any money movement, any `irreversible` action, > 50 recipients, or any deletion | approve, canary first, halt on the first divergence |
 
 ## Blockers (Approve stays disabled until each is resolved in the plan)
 
-- the charge is already fully or partly refunded
-- the charge has an open dispute (refund would pay twice)
+- the charge has already been credited, fully or partly
+- the charge is disputed with the bank (a credit would pay the customer twice)
 - the recipient opted out or has no Telegram chat
 - a contact to delete has an open ticket
 - a new attribute value matches an automation rule (the side effect must be shown and accepted)

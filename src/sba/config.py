@@ -46,15 +46,14 @@ class Settings:
     gemini_api_key: str = field(default_factory=lambda: _env("GEMINI_API_KEY"))
     telegram_bot_token: str = field(default_factory=lambda: _env("TELEGRAM_BOT_TOKEN"))
     telegram_demo_chat_id: str = field(default_factory=lambda: _env("TELEGRAM_DEMO_CHAT_ID"))
-    stripe_secret_key: str = field(default_factory=lambda: _env("STRIPE_SECRET_KEY"))
-
     def systems(self) -> dict[str, bool]:
         """Which real systems are configured (keys present, not validated)."""
+        providers = sum(bool(k) for k in (self.groq_api_key, self.openrouter_api_key, self.gemini_api_key))
         return {
-            "Planner LLM": bool(self.groq_api_key or self.openrouter_api_key or self.gemini_api_key),
-            "Stripe (test mode)": self.stripe_secret_key.startswith("sk_test_"),
-            "Telegram bot": bool(self.telegram_bot_token),
-            "CRM database": bool(self.database_url),
+            "Planner LLM": providers >= 1,
+            "Critic LLM (second provider)": providers >= 2,
+            "Telegram bot": bool(self.telegram_bot_token and self.telegram_demo_chat_id),
+            "CRM and wallet ledger (Neon)": self.database_url.startswith("postgresql"),
         }
 
 

@@ -2,13 +2,13 @@ from sba.domain.hashing import plan_hash, state_fingerprint
 from sba.domain.models import Action, ActionKind, ActionPlan
 
 
-def _plan(amount: int, request: str = "refund doubles") -> ActionPlan:
+def _plan(amount: int, request: str = "credit doubles") -> ActionPlan:
     return ActionPlan(
         run_id="r1",
         request=request,
         actions=(
             Action(
-                kind=ActionKind.REFUND_CHARGE,
+                kind=ActionKind.ISSUE_CREDIT,
                 selector={"duplicate": True, "date": "2026-11-13"},
                 params={"max_amount": amount},
             ),
@@ -33,7 +33,7 @@ def test_plan_hash_ignores_dict_key_order() -> None:
 
 
 def test_fingerprint_is_order_independent_but_value_sensitive() -> None:
-    reads = [("stripe", "ch_1", "amount_refunded", 0), ("crm", "c_1", "tags", ["vip"])]
+    reads = [("crm", "ch_1", "credited_amount", 0), ("crm", "c_1", "tags", ["vip"])]
     assert state_fingerprint(reads) == state_fingerprint(list(reversed(reads)))
-    drifted = [("stripe", "ch_1", "amount_refunded", 500), reads[1]]
+    drifted = [("crm", "ch_1", "credited_amount", 500), reads[1]]
     assert state_fingerprint(reads) != state_fingerprint(drifted)

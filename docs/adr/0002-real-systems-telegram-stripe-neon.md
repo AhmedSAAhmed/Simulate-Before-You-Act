@@ -1,6 +1,6 @@
 # 0002 - Real systems: Telegram, Stripe test mode, Neon Postgres
 
-Date: 2026-11-14 · Status: accepted
+Date: 2026-11-14 · Status: amended by [0004](0004-wallet-credits-instead-of-stripe.md) (Stripe dropped; money moves as wallet credits)
 
 ## Context
 The bonus asks for a real API, not a mock, and at least one high-stakes action must be gated. There's no DOO API access. Hosting is Render's free tier, which has an ephemeral disk, blocks SMTP ports, and deletes free Postgres databases after 30 days (judging runs past the Dec 15 deadline).

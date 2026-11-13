@@ -1,6 +1,6 @@
 # Simulate Before You Act
 
-An agent that thinks through consequences before it changes anything. Every write (a refund, a mass message, a data deletion) is first simulated against the real systems. A person sees the projected effects, side effects, who is affected and the rollback path, and approves, tweaks or rejects it in one step. Execution then runs only the approved plan, against the state it was simulated on, and checks what actually happened against what was predicted.
+An agent that thinks through consequences before it changes anything. Every write (a wallet credit, a mass message, a data deletion) is first simulated against the real systems. A person sees the projected effects, side effects, who is affected and the rollback path, and approves, tweaks or rejects it in one step. Execution then runs only the approved plan, against the state it was simulated on, and checks what actually happened against what was predicted.
 
 Built for DOO's Builders League challenge *Simulate Before You Act*.
 
@@ -14,9 +14,8 @@ Built for DOO's Builders League challenge *Simulate Before You Act*.
 
 | System | Used for | Mode |
 |---|---|---|
-| Stripe | refunds (moves money) | test mode |
 | Telegram Bot API | customer messages (mass message) | real bot |
-| Postgres CRM (DOO-shaped) | contact attributes, deletion | Neon, or SQLite locally |
+| Postgres CRM (DOO-shaped) | wallet credits (moves money), contact attributes, deletion | Neon, or SQLite locally |
 | Groq / OpenRouter / Gemini | planner, critic, narrator | real APIs |
 
 ## Quickstart

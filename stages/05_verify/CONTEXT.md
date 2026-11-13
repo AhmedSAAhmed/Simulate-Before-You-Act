@@ -2,7 +2,7 @@
 
 One job: re-read the real systems after each batch, diff observed effects against the simulation, and halt and roll back when they diverge.
 
-Code only (`src/sba/agents/verifier.py`). It also consumes webhook events (Stripe `charge.refunded`, Telegram updates) as evidence.
+Code only (`src/sba/agents/verifier.py`). It also reads Telegram updates (deliveries, replies) as evidence.
 
 ## Inputs
 - Working (this run): `runs/{run-id}/02_simulate/output/simulation.json`
@@ -15,7 +15,7 @@ Do NOT load: model prompts, other runs.
 ## Process
 1. Re-read every touched record, plus anything linked to it (tickets, automations, messages).
 2. Diff observed against predicted, per record and per effect class.
-3. Invariants: refunds per customer ≤ the duplicate amount; nobody refunded twice; only predicted effect classes appear.
+3. Invariants: credits per customer ≤ the duplicate amount; nobody credited twice; only predicted effect classes appear.
 4. On divergence: stop remaining items, restore snapshots of `reversible` steps, recall `recallable` ones, and draft compensations for the rest. Compensations need a new approval.
 5. Write `report.md` from `_templates/run-report.md`: predicted vs actual, what was rolled back, and the new simulator rule the gap suggests.
 

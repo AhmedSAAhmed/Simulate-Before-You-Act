@@ -83,17 +83,6 @@ def check_telegram(token: str, chat_id: str) -> tuple[str, str]:
     return FAIL, f"bot @{name} works; set TELEGRAM_DEMO_CHAT_ID to one of: {found}"
 
 
-def check_stripe(key: str) -> tuple[str, str]:
-    if key.startswith(("sk_live_", "rk_live_")):
-        return FAIL, "this is a LIVE key; remove it and use the sk_test_ key"
-    if not key.startswith("sk_test_"):
-        return FAIL, "expected a key starting with sk_test_"
-    code, body = get_json("https://api.stripe.com/v1/balance", bearer(key))
-    if code != 200:
-        return FAIL, f"HTTP {code}"
-    return (OK, "test mode") if body.get("livemode") is False else (FAIL, "account reports livemode")
-
-
 def check_database(url: str) -> tuple[str, str]:
     from sba.config import normalize_db_url
 
@@ -125,7 +114,6 @@ def main() -> int:
     run("OpenRouter", env("OPENROUTER_API_KEY", ""), check_openrouter)
     run("Gemini", env("GEMINI_API_KEY", ""), check_gemini)
     run("Telegram", env("TELEGRAM_BOT_TOKEN", ""), check_telegram, env("TELEGRAM_DEMO_CHAT_ID", ""))
-    run("Stripe", env("STRIPE_SECRET_KEY", ""), check_stripe)
     db = env("DATABASE_URL", "")
     if db:
         rows.append(("Database", *check_database(db)))

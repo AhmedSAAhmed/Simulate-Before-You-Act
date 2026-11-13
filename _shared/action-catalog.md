@@ -15,7 +15,7 @@ The planner may only use the actions listed here. Each action names its real sys
 
 | Action | System | Simulator reads | Class | Rollback / compensation |
 |---|---|---|---|---|
-| `refund_charge` | Stripe (test mode) | charge, existing refunds, disputes, currency | `irreversible` | draft re-charge request (customer consent required) |
+| `issue_credit` | wallet ledger in the CRM database | charge, credits already issued for it, dispute flag, wallet balance | `compensable` | debit the same amount while the balance still covers it; otherwise draft a recovery request |
 | `send_message` | Telegram Bot API | contact's chat id, language, opt-out flag, last delivery | `recallable` (48h) | 30s hold, then `deleteMessage`, then a correction message |
 | `update_contact_attributes` | CRM database | current attributes, automation rules matching the new values | `reversible` | restore snapshot |
 | `delete_contacts` | CRM database | contact, open tickets, linked conversations | `reversible` for 24h, then purge | undelete from snapshot before purge |

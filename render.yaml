@@ -20,7 +20,5 @@ services:
         sync: false
       - key: TELEGRAM_DEMO_CHAT_ID
         sync: false
-      - key: STRIPE_SECRET_KEY
-        sync: false
       - key: DATABASE_URL
         sync: false

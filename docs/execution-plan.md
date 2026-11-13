@@ -14,7 +14,7 @@ Decisions are in section 10. Account setup steps are in [setup.md](setup.md).
 | 20 | Reviewer feels safe in 90s | One screen: a before/after diff, impact counts, money totals, who is affected, the rollback path and a risk tier. One click to approve, tweak or reject. |
 | 15 | Wrong prediction caught downstream | Five safety nets: pre-flight drift check, canary batch, post-condition invariants, a circuit breaker, and a predicted-vs-actual reconciliation report. |
 | 15 | Future thesis | Approvals bind to simulations, not intents, and measured simulator accuracy is what earns an agent autonomy (section 9). |
-| Bonus | Diff view; real API | A diff of each record before and after. Runs against Stripe test mode and the DOO REST API (or Telegram plus Postgres as a fallback). |
+| Bonus | Diff view; real API | A diff of each record before and after. Runs against the real Telegram Bot API and a Neon Postgres CRM, not mocks. |
 | DQ | "Are you sure?" dialog | Avoided by construction: there's no generic confirm. Approval is a signed binding to a specific simulated plan and state fingerprint. |
 
 ---
@@ -23,13 +23,13 @@ Decisions are in section 10. Account setup steps are in [setup.md](setup.md).
 
 The scenario comes straight from DOO's homepage, which shows the sample "I was charged twice" and the analytics line "Duplicate-charge complaints are up 12%".
 
-> **Operator types:** "Refund everyone who was double-charged yesterday, apologize on WhatsApp in their language, and tag them `dup-charge-2026-11`."
+> **Operator types:** "Credit back everyone who was double-charged yesterday, apologize on Telegram in their language, and tag them `dup-charge-2026-11`."
 
 The agent turns that into a typed plan with three action kinds. Each kind sits in a different reversibility class, which is what makes the rollback story honest:
 
 | Action | Real system | Reversibility | Rollback / compensation |
 |---|---|---|---|
-| `refund_charge` (**high stakes: moves money**) | Stripe test mode | **Irreversible** once succeeded | None automatic. Compensation is a draft re-charge request that needs customer consent. The simulator says so plainly. |
+| `issue_credit` (**high stakes: moves money**) | Wallet ledger in the Neon CRM (append-only; see ADR 0004) | **Compensable** | A matching debit while the balance still covers it. Once the customer has spent it, only a drafted recovery request remains, and the simulator says so plainly. |
 | `send_message` (**mass message**) | Telegram Bot API (DOO-style inbox; no DOO API access) | Recallable for 48h via `deleteMessage`, after the customer may already have read it | A hold queue with a 30s undo window, a real `deleteMessage` recall, then an auto-drafted correction message |
 | `update_contact_attributes` | Postgres CRM shaped like DOO's `contacts` / `custom_attributes` API | **Reversible** | Restore from the pre-write snapshot |
 | `delete_contacts` (**data deletion**) | Postgres CRM | Reversible during a 24h soft-delete window, then irreversible purge | Undelete from the snapshot before the purge timer fires |
@@ -39,10 +39,10 @@ The CRM adapter mirrors DOO's REST shapes (`/contacts`, `/contacts/:id/custom_at
 **Reviewer as a real customer:** the reviewer can open the demo bot in Telegram and press Start. They are then added to the CRM as a customer and receive the real apology message on their own phone, and they watch the recall delete it.
 
 ### What the simulation finds (examples that change the decision)
-- **Already refunded:** 2 customers got a manual refund from a human agent. They are excluded automatically, and the diff shows why.
-- **Open dispute:** 3 charges have an open Stripe dispute, so a refund would reimburse them twice. This is a **blocker**: exclude them, or include them with a written reason.
+- **Already credited:** 2 customers got a manual credit from a human agent. They are excluded automatically, and the diff shows why.
+- **Disputed:** 3 charges are disputed with the bank, so a credit would reimburse them twice. This is a **blocker**: exclude them, or include them with a written reason.
 - **WhatsApp 24-hour window:** 7 contacts are outside the session window, so a free-text message will fail. The simulator proposes an approved template for them.
-- **Money:** total $X refunded, Stripe fees not returned (−$Y), N customers in each language (EN/AR). The Arabic preview renders right-to-left.
+- **Money:** total $X credited, the new balance of every wallet, N customers in each language (EN/AR). The Arabic preview renders right-to-left.
 - **Policy tier:** over $500 total, or over 50 recipients, is tier HIGH: canary-first execution and a 10-minute approval expiry.
 
 ---
@@ -64,7 +64,7 @@ flowchart LR
 
 **Principles**
 1. **The LLM proposes; code disposes.** The LLM writes the plan and the narrative. Every number in the simulation comes from code reading real state.
-2. **Approval is a binding, not a click.** `plan_hash = sha256(canonical plan)`, and `state_fingerprint` hashes the read-set (ids plus `updated_at` and `amount_refunded`). The executor refuses a stale or mismatched approval. This adapts ECC's `operator-approval-loop`: epoch-keyed decisions and claim → dispatch → complete/unknown.
+2. **Approval is a binding, not a click.** `plan_hash = sha256(canonical plan)`, and `state_fingerprint` hashes the read-set (ids plus `updated_at` and `credited_amount`). The executor refuses a stale or mismatched approval. This adapts ECC's `operator-approval-loop`: epoch-keyed decisions and claim → dispatch → complete/unknown.
 3. **Every stage ends at a check** (ICM invariant 6). A fail stops the run there, so the gate is the architecture itself, not decoration.
 4. **Customer text is untrusted input.** It's treated as data, policy caps are enforced in code, and the planner can't raise limits (ECC `agent-security-hardening`).
 5. **The critic uses a different model family from the planner**, to avoid same-model blind spots.
@@ -75,10 +75,10 @@ flowchart LR
 
 There are two scripted failure modes, both available as toggles in a **Failure Lab** tab:
 
-1. **State drift between approval and execution.** After approval, a "human agent" refunds one customer through a side channel (a real Stripe call). The pre-flight check finds a fingerprint mismatch, halts that item, re-simulates only the change, and asks for re-approval of that part. Nothing is double-refunded.
+1. **State drift between approval and execution.** After approval, a "human agent" credits one customer through the CRM admin (a real database write). The pre-flight check finds a fingerprint mismatch, halts that item, re-simulates only the change, and asks for re-approval of that part. Nobody is credited twice.
 2. **An unmodeled side effect.** The CRM has an automation rule, like a DOO "Flow": any tag containing `charge` opens a billing ticket and sends the customer a Telegram notice. In failure mode, the simulator deliberately doesn't read the flow rules. The canary batch (5%) shows unexpected tickets and messages that the simulation didn't predict, so the circuit breaker halts the plan. The tags then roll back, the tickets close, and the stray notices are recalled with `deleteMessage`. The reconciliation report shows predicted vs actual, and the gap becomes a new simulator rule plus a regression eval.
 
-Supporting nets: post-condition invariants (sum of refunds ≤ sum of duplicates, no customer refunded twice), single-flight execution locks, and `unknown` outcomes that are never auto-retried.
+Supporting nets: post-condition invariants (sum of credits ≤ sum of duplicates, no customer credited twice), single-flight execution locks, and `unknown` outcomes that are never auto-retried.
 
 ---
 
@@ -87,10 +87,10 @@ Supporting nets: post-condition invariants (sum of refunds ≤ sum of duplicates
 | Layer | Choice | Why |
 |---|---|---|
 | UI | **Gradio Blocks** (current major), mounted on FastAPI | Your preference; fast to build; `gr.Dataframe` handles one-step tweaks and `gr.HTML` the diff |
-| Server | **FastAPI** (one process) | Webhook endpoints (Stripe signature, Telegram secret-token header), `/healthz` for Render, `gr.mount_gradio_app` |
+| Server | **FastAPI** (one process) | Telegram webhook (secret-token header), `/healthz` for Render, `gr.mount_gradio_app` |
 | Models | **Pydantic v2** | ActionPlan, Simulation, Effect, Approval, JournalEntry; JSON schema for LLM structured output |
 | LLM | `openai` SDK against OpenAI-compatible endpoints | One client for **Groq** (fast planner), **OpenRouter** and **Gemini** (critic/fallback); keys are already in `.env` |
-| HTTP | `httpx` plus `stripe` SDK | Adapters for Stripe, DOO and Telegram |
+| HTTP | `httpx` | Telegram adapter; the CRM adapter uses SQLAlchemy |
 | Storage | **Neon free Postgres** (SQLite locally) via SQLAlchemy | Render's free Postgres **expires after 30 days**, and judging runs past Dec 15; Render's disk is ephemeral |
 | Tests | pytest, recorded API fixtures, scenario evals | ECC `python-testing`, `eval-harness`, `ai-regression-testing` |
 | Deploy | `render.yaml` (free web service) | Health check, env vars; note the ~1-minute cold start after 15 min idle |
@@ -125,7 +125,7 @@ Simulate-Before-You-Act/
 │  └─ 05_verify/CONTEXT.md   predicted vs actual; check: invariants hold or roll back
 ├─ src/sba/
 │  ├─ domain/                models.py, hashing.py, policy.py
-│  ├─ adapters/              stripe_.py, telegram.py, crm_db.py (each: read / simulate / execute / verify / compensate)
+│  ├─ adapters/              telegram.py, crm_db.py (contacts, charges, wallet ledger; each: read / simulate / execute / verify / compensate)
 │  ├─ agents/                planner.py, simulator.py, critic.py, executor.py, verifier.py
 │  ├─ llm/router.py          Groq / OpenRouter / Gemini with fallback and a budget cap
 │  ├─ store/                 journal.py, approvals.py (claim → dispatch → complete / unknown)
@@ -155,8 +155,8 @@ Each phase ends at a check, in the ICM style. Nothing moves on until the check p
 
 | Phase | Dates | Work | Exit check |
 |---|---|---|---|
-| **P0 Setup + walking skeleton** | Nov 14–16 | Answer the open questions; `git init`, set the repo-local git identity, first push; ICM skeleton (AGENTS.md, CONTEXT.md, stage contracts); install ECC/ICM locally in `.claude/`; Stripe test account; Neon DB; DOO token or Telegram bot; **deploy a hello-world Gradio+FastAPI to Render on day 1** | Live URL serves `/healthz`; clean clone runs `pytest`; `links.py` passes |
-| **P1 Domain + adapters** | Nov 17–22 | Pydantic models, canonical hashing, policy engine; adapters with real read / simulate / execute / verify / compensate; `seed_demo.py` creates duplicate charges + contacts | Scenario test: simulation of the seeded dataset matches hand-computed numbers exactly |
+| **P0 Setup + walking skeleton** | Nov 14–16 | Answer the open questions; `git init`, set the repo-local git identity, first push; ICM skeleton (AGENTS.md, CONTEXT.md, stage contracts); install ECC/ICM locally in `.claude/`; Telegram bot; Neon DB; **deploy a hello-world Gradio+FastAPI to Render on day 1** | Live URL serves `/healthz`; clean clone runs `pytest`; `links.py` passes |
+| **P1 Domain + adapters** | Nov 17–22 | Pydantic models, canonical hashing, policy engine; adapters with real read / simulate / execute / verify / compensate; `seed_demo.py` creates contacts, wallets and duplicate charges | Scenario test: simulation of the seeded dataset matches hand-computed numbers exactly |
 | **P2 Agents** | Nov 23–28 | Planner (structured output), critic (second model), executor (pre-flight, snapshot, canary, idempotency keys, journal), verifier (predicted vs actual, invariants, circuit breaker) | End-to-end run in the CLI: intent → simulate → approve → execute → verify, with journal entries |
 | **P3 UI** | Nov 29–Dec 3 | Gradio Navy theme; review screen (diff, impact, rollback, risk, blockers); one-step approve/tweak/reject; live execution timeline; audit log; Arabic RTL preview | A cold reviewer understands and approves in under 90s (time a friend) |
 | **P4 Failure Lab + evals** | Dec 4–7 | Drift and unmodeled-side-effect toggles; reconciliation report; simulator-accuracy eval suite | Both failure modes caught; eval report committed |
@@ -171,7 +171,7 @@ Each phase ends at a check, in the ICM style. Nothing moves on until the check p
 | Risk | Mitigation |
 |---|---|
 | No DOO API access on the free plan | Telegram bot + Postgres CRM fallback behind the same adapter interface; switch with one env var |
-| Public demo abused (spam, LLM cost) | Per-session sandbox, 5 runs per session, daily token budget, messages only go to our own test inbox/channel, Stripe in test mode only |
+| Public demo abused (spam, LLM cost) | Per-session sandbox, 5 runs per session, daily token budget, messages only go to chats that pressed Start on our bot, wallets are per-session sandbox rows |
 | Render cold start (~60s) | One-line note in the submission; optional uptime ping (one always-on service uses ~744 of the 750 free hours) |
 | Render free Postgres expires on day 30 | Neon free Postgres instead; SQLite for local dev |
 | LLM returns bad JSON or hallucinated numbers | Schema-validated output with retry, numbers only from code, critic output treated as advisory |
@@ -195,8 +195,8 @@ Each phase ends at a check, in the ICM style. Nothing moves on until the check p
 | # | Topic | Decision |
 |---|---|---|
 | 1 | Messaging system | **Telegram Bot API.** There's no DOO API access; the CRM mirrors DOO's API shapes. |
-| 2 | Gated actions | **A mix:** refund (money), mass message, attribute update and contact deletion in one remediation plan. Config deploy is a stretch. |
-| 3 | Accounts | The lowest-pain set: Telegram BotFather, Stripe test mode and Neon Postgres, about 15 minutes in total (see [setup.md](setup.md)). The app runs on SQLite until `DATABASE_URL` is set. |
+| 2 | Gated actions | **A mix:** wallet credit (money), mass message, attribute update and contact deletion in one remediation plan. Config deploy is a stretch. |
+| 3 | Accounts | Telegram BotFather and Neon Postgres (both set up 2026-11-14; see [setup.md](setup.md)). **Stripe dropped** the same day: money moves as wallet credits in our own ledger ([ADR 0004](adr/0004-wallet-credits-instead-of-stripe.md)). |
 | 4 | Theme | A close visual replica of Navy, **written from scratch**: same palette, type scale, spacing, radii and layout rhythm. None of their source files, images, logo or copy are copied, because it's a paid theme and we don't hold a license. |
 | 5 | Git identity | Repo-local `user.name = Ahmed Salama`; email from your existing global config. No AI co-author lines. |
 | 6 | UI | Gradio on FastAPI |
@@ -210,8 +210,8 @@ Each phase ends at a check, in the ICM style. Nothing moves on until the check p
 
 ## 11. Extra ideas (stretch)
 
-- **Counterfactual view:** "refund vs store credit" side by side, each with its simulated effects.
+- **Counterfactual view:** "credit now vs a discount on the next order" side by side, each with its simulated effects.
 - **Evidence pack:** a downloadable zip per run (plan, simulation, approval, journal, verification). It's the ICM "status on disk" idea made portable for auditors.
 - **Simulator accuracy badge** on the dashboard ("97% over 42 runs"), which feeds the thesis.
-- **Webhook-driven verify:** DOO `message.created` / `conversation.updated` and Stripe `charge.refunded` confirm effects asynchronously, so the reconciliation is evidence-based.
+- **Webhook-driven verify:** Telegram updates (deliveries, replies) confirm effects asynchronously, so the reconciliation is evidence-based.
 - **MCP server:** expose `simulate_action` as an MCP tool so any agent (including DOO's) can call the gate. This makes a strong thesis demo if time allows.
