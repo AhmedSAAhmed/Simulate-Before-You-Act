@@ -126,7 +126,9 @@ SANDBOXED_TABLES = (contacts, charges, wallet_ledger, tickets, automation_rules,
 def make_engine(url: str) -> Engine:
     if url in ("sqlite://", "sqlite:///:memory:"):
         return create_engine("sqlite://", poolclass=StaticPool, connect_args={"check_same_thread": False})
-    return create_engine(url, pool_pre_ping=True)
+    # No pre-ping: it costs a full round trip before every query (about half the time, measured from the
+    # Gulf to Frankfurt). Recycling connections before Neon's 5-minute idle suspend avoids stale ones instead.
+    return create_engine(url, pool_pre_ping=False, pool_recycle=240, pool_size=5, max_overflow=5)
 
 
 def init_db(engine: Engine) -> None:

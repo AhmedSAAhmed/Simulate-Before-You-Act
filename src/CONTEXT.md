@@ -11,7 +11,9 @@ One package, `sba`. Each stage in [../CONTEXT.md](../CONTEXT.md) maps to one mod
 | `sba/llm/` | provider router (Groq, Gemini, OpenRouter) with fallback and a daily token budget | 01–02 |
 | `sba/store/` | run folders mirrored to the database (`runs.py`), hash-bound approvals (`approvals.py`) | 03–05 |
 | `sba/pipeline.py`, `sba/checks.py` | one run through all stages; each stage's `## Check` as code | 01–05 |
-| `sba/ui/` | Gradio app, Navy-style theme, diff rendering | 03 |
-| `sba/main.py` | FastAPI app: UI mount, webhooks, `/healthz` | — |
+| `sba/ui/` | Gradio app (`app.py`), button logic (`actions.py`), review and result HTML (`render.py`), Navy-style theme | 03 |
+| `sba/bot.py`, `sba/bot_cards.py` | the Telegram front door: commands, simulation cards, buttons bound to plan hashes | 03 |
+| `sba/sessions.py`, `sba/services.py` | a sandbox per visitor, phone linking, limits; the shared services both surfaces use | — |
+| `sba/main.py` | FastAPI app: UI mount, Telegram webhook, `/healthz`, startup tasks | — |
 
 Rules: numbers come from adapters, never from a model. Adapters never write during `read` or `simulate`. Every adapter has a test in `tests/`.

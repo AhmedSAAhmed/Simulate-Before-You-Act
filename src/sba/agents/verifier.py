@@ -19,14 +19,22 @@ Done = Sequence[tuple[Effect, ExecResult]]
 
 
 def record_diffs(done: Done, adapters: Mapping[ActionKind, Adapter], kinds: dict[int, ActionKind]) -> list[Diff]:
-    """Per-record check: every field an adapter can observe must equal the predicted value."""
-    diffs = []
+    """Per-record check: every field an adapter can observe must equal the predicted value.
+
+    Records are read in one batch per action where the adapter supports it (`observe_many`)."""
+    by_action: dict[int, list[Effect]] = {}
     for effect, _ in done:
-        observed = adapters[kinds[effect.action_index]].observe(effect)
-        for name, value in observed.items():
-            if name in effect.after and effect.after[name] != value:
-                diffs.append(Diff(action_index=effect.action_index, record_id=effect.record_id, field=name,
-                                  predicted=effect.after[name], observed=value))
+        by_action.setdefault(effect.action_index, []).append(effect)
+    diffs = []
+    for index, effects in sorted(by_action.items()):
+        adapter = adapters[kinds[index]]
+        many = getattr(adapter, "observe_many", None)
+        observed = many(effects) if many else {e.record_id: adapter.observe(e) for e in effects}
+        for effect in effects:
+            for name, value in observed[effect.record_id].items():
+                if name in effect.after and effect.after[name] != value:
+                    diffs.append(Diff(action_index=effect.action_index, record_id=effect.record_id, field=name,
+                                      predicted=effect.after[name], observed=value))
     return diffs
 
 

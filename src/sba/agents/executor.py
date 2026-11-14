@@ -7,6 +7,7 @@ the verifier compares observed with predicted; any surprise halts the run and ro
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Mapping
+from contextlib import nullcontext
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -46,7 +47,9 @@ def execute_plan(
     if before_writes is not None:  # Failure Lab: someone changes the world after approval
         before_writes()
 
-    fresh = simulate(plan, adapters, now=now, blind_spots=blind_spots)
+    crm = next((a.crm for a in adapters.values() if hasattr(a, "crm")), None)
+    with crm.bound() if crm is not None else nullcontext():  # the drift re-read, on one connection
+        fresh = simulate(plan, adapters, now=now, blind_spots=blind_spots)
     if fresh.state_fingerprint != simulation.state_fingerprint:
         diffs = verifier.drift_diffs(simulation, fresh)
         summary = (f"The data changed after approval ({len(diffs)} difference(s)). Nothing was written. "
@@ -70,7 +73,8 @@ def execute_plan(
                 done.append((effect, result))
             if not batch:
                 continue
-            diffs = verifier.record_diffs(done, adapters, kinds)
+            # Check this action's writes now; everything is re-checked once at the end.
+            diffs = verifier.record_diffs([d for d in done if d[0].action_index == index], adapters, kinds)
             extra = verifier.unpredicted(simulation, adapters, run_id)
             if diffs or extra:
                 what = ", ".join(f"{n} unpredicted {k.replace('_', ' ')}" for k, n in extra.items()) or \
@@ -78,6 +82,9 @@ def execute_plan(
                 return _halt(plan, simulation, adapters, kinds, entries, done,
                              f"The {phase} for action {index} ({action.kind}) found {what}", diffs, extra)
 
+    if diffs := verifier.record_diffs(done, adapters, kinds):  # a later action may have moved an earlier record
+        return _halt(plan, simulation, adapters, kinds, entries, done,
+                     f"The final check found {len(diffs)} record(s) that no longer match the prediction", diffs)
     checks = verifier.invariants(done, adapters, kinds, run_id)
     if broken := [c for c in checks if not c.held]:
         return _halt(plan, simulation, adapters, kinds, entries, done,

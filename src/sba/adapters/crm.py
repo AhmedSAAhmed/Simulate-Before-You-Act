@@ -53,13 +53,17 @@ class CreditAdapter:
                                  "Credit a customer has already spent can only be recovered by asking them.")
         found = self.crm.duplicate_charges_on(day)
         ctx.read("crm", f"selector:{index}", "charge_ids", [c["id"] for c in found])
+        # Three batched reads instead of three per charge.
+        people = self.crm.contacts_by_ids([c["contact_id"] for c in found])
+        credited_by = self.crm.credited_for_charges([c["id"] for c in found])
+        balances = self.crm.wallet_balances(sorted(people))
         currencies: set[str] = set()
         total = 0
         for charge in found:
             cid, cur, amount = charge["contact_id"], charge["currency"], charge["amount_minor"]
-            contact = self.crm.contact(cid) or {"id": cid, "name": "unknown contact"}
+            contact = people.get(cid) or {"id": cid, "name": "unknown contact"}
             who = _who(contact)
-            credited = ctx.read("crm", charge["id"], "credited", self.crm.credited_for_charge(charge["id"]))
+            credited = ctx.read("crm", charge["id"], "credited", credited_by.get(charge["id"], 0))
             disputed = ctx.read("crm", charge["id"], "disputed", bool(charge["disputed"]))
             ctx.read("crm", charge["id"], "amount", amount)
             remaining = amount - credited
@@ -84,7 +88,7 @@ class CreditAdapter:
             if charge["id"] in override:
                 sim.notes.append(f"{charge['id']} for {who} included by the operator: {override[charge['id']]}")
             if cid not in ctx.balances:
-                ctx.balances[cid] = ctx.read("crm", cid, "wallet_balance", self.crm.wallet_balance(cid))
+                ctx.balances[cid] = ctx.read("crm", cid, "wallet_balance", balances.get(cid, 0))
             before = ctx.balances[cid]
             ctx.balances[cid] = before + remaining
             sim.effects.append(Effect(
@@ -125,25 +129,27 @@ class CreditAdapter:
         return ExecResult("rolled_back", external_ref=f"ledger:{entry}")
 
     def observe(self, effect: Effect) -> dict[str, Any]:
+        return self.observe_many([effect])[effect.record_id]
+
+    def observe_many(self, effects: list[Effect]) -> dict[str, dict[str, Any]]:
         # Per charge only: a wallet can hold several credits, so wallets are checked in invariants().
-        return {"credited_for_charge": self.crm.credited_for_charge(effect.record_id)}
+        credited = self.crm.credited_for_charges([e.record_id for e in effects])
+        return {e.record_id: {"credited_for_charge": credited[e.record_id]} for e in effects}
 
     def invariants(self, effects: list[Effect], run_id: str) -> list[InvariantResult]:
         if not effects:
             return []
-        over = []
-        for e in effects:
-            charge = self.crm.charge(e.record_id)
-            credited = self.crm.credited_for_charge(e.record_id)
-            if charge is None or credited > charge["amount_minor"]:
-                over.append(f"{e.record_id} credited {credited}")
+        ids = [e.record_id for e in effects]
+        found, credited = self.crm.charges_by_ids(ids), self.crm.credited_for_charges(ids)
+        over = [f"{cid} credited {credited[cid]}" for cid in ids
+                if cid not in found or credited[cid] > found[cid]["amount_minor"]]
         per_charge = Counter(r["charge_id"] for r in self.crm.ledger_for_run(run_id) if r["kind"] == "credit")
         twice = sorted(c for c, n in per_charge.items() if n > 1)
         predicted: dict[str, int] = {}
         for e in effects:  # effects are in order, so the last one per wallet is its final balance
             predicted[e.after["contact_id"]] = e.after["wallet_balance"]
-        wrong = [f"{cid}: {self.crm.wallet_balance(cid)} vs {want}" for cid, want in predicted.items()
-                 if self.crm.wallet_balance(cid) != want]
+        actual = self.crm.wallet_balances(sorted(predicted))
+        wrong = [f"{cid}: {actual[cid]} vs {want}" for cid, want in predicted.items() if actual[cid] != want]
         return [
             InvariantResult(name="credit_within_duplicate", held=not over, detail="; ".join(over)),
             InvariantResult(name="no_charge_credited_twice", held=not twice, detail=", ".join(twice)),
@@ -178,8 +184,9 @@ class LabelAdapter:
         for rule in rules:
             ctx.read("crm", f"rule:{rule['id']}", "match_text", rule["match_text"])
         fired: dict[str, list[str]] = {}
+        people = self.crm.contacts_by_ids(contact_ids)  # one read for everyone
         for cid in contact_ids:
-            contact = self.crm.contact(cid)
+            contact = people.get(cid)
             if contact is None or contact["deleted_at"] is not None:
                 continue
             who = _who(contact)
@@ -243,8 +250,12 @@ class LabelAdapter:
                                                 f"{recalled} notices recalled")
 
     def observe(self, effect: Effect) -> dict[str, Any]:
-        contact = self.crm.contact(effect.record_id)
-        return {"labels": sorted(contact["labels"]) if contact else None}
+        return self.observe_many([effect])[effect.record_id]
+
+    def observe_many(self, effects: list[Effect]) -> dict[str, dict[str, Any]]:
+        people = self.crm.contacts_by_ids([e.record_id for e in effects])
+        return {e.record_id: {"labels": sorted(people[e.record_id]["labels"]) if e.record_id in people else None}
+                for e in effects}
 
     def side_observations(self, run_id: str) -> dict[str, int]:
         """Effects the CRM produced on its own because of this run (automations)."""
@@ -273,9 +284,10 @@ class DeleteAdapter:
             return sim
         sim = ActionSim(rollback=f"Undelete from the snapshot any time before the purge at "
                                  f"{purge_at:%Y-%m-%d %H:%M} UTC; after the purge the records are gone.")
+        open_by = self.crm.open_ticket_counts([c["id"] for c in found])  # one read for everyone
         for contact in found:
             who = _who(contact)
-            open_count = ctx.read("crm", contact["id"], "open_tickets", len(self.crm.open_tickets(contact["id"])))
+            open_count = ctx.read("crm", contact["id"], "open_tickets", open_by.get(contact["id"], 0))
             if contact["id"] in exclude:
                 sim.notes.append(f"{who} left out by the operator.")
                 continue
@@ -312,10 +324,17 @@ class DeleteAdapter:
         return ExecResult("rolled_back", detail="contact restored")
 
     def observe(self, effect: Effect) -> dict[str, Any]:
-        contact = self.crm.contact(effect.record_id)
-        if contact is None:
-            return {"status": "purged"}
-        return {"status": "soft-deleted" if contact["deleted_at"] else "active"}
+        return self.observe_many([effect])[effect.record_id]
+
+    def observe_many(self, effects: list[Effect]) -> dict[str, dict[str, Any]]:
+        people = self.crm.contacts_by_ids([e.record_id for e in effects])
+
+        def status(cid: str) -> str:
+            if cid not in people:
+                return "purged"
+            return "soft-deleted" if people[cid]["deleted_at"] else "active"
+
+        return {e.record_id: {"status": status(e.record_id)} for e in effects}
 
 
 def no_label_match(index: int, label: str, crm: CrmService) -> Blocker:
@@ -324,7 +343,8 @@ def no_label_match(index: int, label: str, crm: CrmService) -> Blocker:
     close = difflib.get_close_matches(label, list(counts), n=1, cutoff=0.6)
     hint = f" Did you mean '{close[0]}' ({counts[close[0]]} contacts)?" if close else ""
     return Blocker(action_index=index, record_id="plan", rule="empty_selector", hard=True,
-                   detail=f"action {index}: no contact has the label '{label}', so it would do nothing.{hint}")
+                   detail=f"action {index}: no contact has the label '{label}', so it would do nothing.{hint}",
+                   fix={"selector": {"label": close[0]}} if close else {})
 
 
 def _labels(value: Any, where: str) -> list[str]:

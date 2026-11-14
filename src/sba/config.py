@@ -46,13 +46,23 @@ class Settings:
     gemini_api_key: str = field(default_factory=lambda: _env("GEMINI_API_KEY"))
     telegram_bot_token: str = field(default_factory=lambda: _env("TELEGRAM_BOT_TOKEN"))
     telegram_demo_chat_id: str = field(default_factory=lambda: _env("TELEGRAM_DEMO_CHAT_ID"))
+    @property
+    def browser_secret(self) -> str:
+        """Key for the visitor's saved session in their browser. Stable across restarts (Render wakes
+        up after every idle period), so visitors keep their sandbox. SESSION_SECRET overrides it."""
+        import hashlib
+
+        given = _env("SESSION_SECRET")
+        basis = given or f"sba-browser:{self.telegram_bot_token}:{self.database_url}"
+        return hashlib.sha256(basis.encode()).hexdigest()[:32]
+
     def systems(self) -> dict[str, bool]:
         """Which real systems are configured (keys present, not validated)."""
         providers = sum(bool(k) for k in (self.groq_api_key, self.openrouter_api_key, self.gemini_api_key))
         return {
             "Planner LLM": providers >= 1,
             "Critic LLM (second provider)": providers >= 2,
-            "Telegram bot": bool(self.telegram_bot_token and self.telegram_demo_chat_id),
+            "Telegram bot": bool(self.telegram_bot_token),
             "CRM and wallet ledger (Neon)": self.database_url.startswith("postgresql"),
         }
 

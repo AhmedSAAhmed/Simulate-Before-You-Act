@@ -16,8 +16,11 @@ Order matters only for Render, which comes last.
 1. In Telegram, open **@BotFather** and send `/newbot`.
 2. Give it a name (for example *SBA Demo*) and a username ending in `bot`.
 3. Copy the token it replies with into `.env` as `TELEGRAM_BOT_TOKEN=`.
-4. Open your new bot and press **Start**. You become demo customer #1, and you'll receive the real messages.
-5. Run `python scripts/check_setup.py`. It prints your chat id; paste it into `.env` as `TELEGRAM_DEMO_CHAT_ID=`.
+4. Optional, for the CLI scripts only: open the bot, press **Start**, run `python scripts/check_setup.py`, and paste the chat id it prints into `.env` as `TELEGRAM_DEMO_CHAT_ID=`. The web demo and the bot don't need it, because every visitor's own chat is their inbox.
+5. In @BotFather, send `/setjoingroups` and choose **Disable**, so the bot can't be added to groups.
+6. **Before sharing the demo publicly**, send `/revoke` to @BotFather and put the new token in `.env` and on Render. The current token was shared during development.
+
+To test the bot locally, run `python -m sba.bot --poll`. On Render, the app registers its webhook by itself (it uses `RENDER_EXTERNAL_URL`), and that also replaces any local polling.
 
 ## 2. Neon Postgres
 

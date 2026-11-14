@@ -25,7 +25,8 @@ BASE_URLS = {
     "openrouter": "https://openrouter.ai/api/v1",
 }
 DEFAULT_CHAINS = {
-    "planner": "groq:openai/gpt-oss-120b,gemini:gemini-3.5-flash",
+    # Each Groq model has its own rate limit, so the smaller one is a fast second try.
+    "planner": "groq:openai/gpt-oss-120b,groq:openai/gpt-oss-20b,gemini:gemini-3.5-flash",
     # flash-lite answers in about a second; the critic lists risks, it doesn't need deep reasoning.
     "critic": "gemini:gemini-3.5-flash-lite,openrouter:nvidia/nemotron-3-ultra-550b-a55b:free",
 }
@@ -150,8 +151,10 @@ class LLMRouter:
     def _openai_transport(self, ref: ModelRef, messages: list[dict[str, str]]) -> tuple[str, int]:
         from openai import OpenAI
 
+        # No SDK retries: on a 429 the SDK would sleep (16s on Groq's free tier) before trying the same
+        # model again. Falling through to the next model in the chain is faster.
         client = OpenAI(base_url=BASE_URLS[ref.provider], api_key=self._keys[ref.provider], timeout=45,
-                        max_retries=1)
+                        max_retries=0)
         resp = client.chat.completions.create(
             model=ref.model, messages=messages, temperature=0.2, response_format={"type": "json_object"}
         )

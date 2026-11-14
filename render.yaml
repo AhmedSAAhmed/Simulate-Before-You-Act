@@ -18,7 +18,5 @@ services:
         sync: false
       - key: TELEGRAM_BOT_TOKEN
         sync: false
-      - key: TELEGRAM_DEMO_CHAT_ID
-        sync: false
       - key: DATABASE_URL
         sync: false

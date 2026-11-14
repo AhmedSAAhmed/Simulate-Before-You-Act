@@ -15,29 +15,9 @@ from sba.llm.router import LLMRouter, UsageMeter, parse_chain
 from sba.pipeline import Pipeline, StageFailed, resolve_blockers
 from sba.store.approvals import ApprovalError
 from sba.store.runs import RunStore
-from tests.conftest import NOW
+from tests.conftest import CRITIC_NOTE, NOW, FakeModels, plan_json
 
 ACCEPT = "Billing wants a ticket for every affected customer"
-CRITIC_NOTE = "Customers may reply asking when the credit appears; the inbox will get a burst of questions."
-
-
-def _plan_json() -> str:
-    return json.dumps({"actions": [a.model_dump(mode="json") for a in demo_plan().actions], "notes": ""})
-
-
-class FakeModels:
-    def __init__(self, planner_replies: list[str] | None = None, critic_fails: bool = False) -> None:
-        self.planner_replies = list(planner_replies or [_plan_json()])
-        self.critic_fails = critic_fails
-        self.calls: list[str] = []
-
-    def __call__(self, ref, messages):
-        self.calls.append(str(ref))
-        if '"side_effects"' not in messages[0]["content"]:  # the critic's output format names side_effects
-            return self.planner_replies.pop(0) if len(self.planner_replies) > 1 else self.planner_replies[0], 100
-        if self.critic_fails:
-            raise TimeoutError("critic down")
-        return json.dumps({"side_effects": [{"description": CRITIC_NOTE, "likelihood": "medium"}]}), 50
 
 
 def _pipeline(crm, adapters, tmp_path, models: FakeModels) -> Pipeline:
@@ -148,7 +128,7 @@ def test_approve_is_impossible_while_blockers_remain(crm, adapters, tmp_path) ->
 
 def test_planner_gets_one_retry_with_its_errors(crm, adapters, tmp_path) -> None:
     bad = json.dumps({"actions": [{"kind": "issue_credit", "selector": {"everyone": True}}]})
-    models = FakeModels(planner_replies=[bad, _plan_json()])
+    models = FakeModels(planner_replies=[bad, plan_json()])
     plan = _pipeline(crm, adapters, tmp_path, models).plan(DEMO_REQUEST)
     assert len(plan.actions) == 4 and models.calls.count("groq:planner-model") == 2
 

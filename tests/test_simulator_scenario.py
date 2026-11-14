@@ -109,6 +109,13 @@ def test_a_mistyped_label_blocks_and_suggests_the_real_one(adapters) -> None:
     empty = [b for b in sim.blockers if b.rule == "empty_selector"]
     assert empty and empty[0].hard and "Did you mean 'spam-import-2026-11' (4 contacts)?" in empty[0].detail
 
+    # Found live again: with no fix button the example request got stuck. The fix is one click.
+    from sba.pipeline import resolve_blockers
+
+    fixed = resolve_blockers(plan.model_copy(update={"actions": plan.actions[:3] + (typo,)}), sim)
+    assert fixed.actions[3].selector == {"label": "spam-import-2026-11"}
+    assert simulate(fixed, adapters, now=NOW).totals["deletions"] == 3
+
 
 def test_any_action_that_matches_nothing_is_a_blocker(adapters) -> None:
     plan = ActionPlan(run_id="r", request="credit last year's doubles", actions=(
@@ -129,7 +136,7 @@ def test_network_trouble_is_not_mistaken_for_a_blocked_chat(adapters, fake_teleg
     sim = simulate(demo_plan(), adapters, now=NOW)
     rules = {b.rule for b in sim.blockers if b.action_index == 1}
     assert "reachability_unknown" in rules and "unreachable" not in rules
-    assert fake_telegram.calls.count("getChat") == 4  # two chats, one retry each
+    assert fake_telegram.calls.count("getChat") == 6  # two chats, three attempts each (client retries)
 
     fake_telegram.network_down = False  # not cached: simulating again recovers
     assert "reachability_unknown" not in {b.rule for b in simulate(demo_plan(), adapters, now=NOW).blockers}

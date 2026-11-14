@@ -89,3 +89,63 @@ footer:not(.sba-footer) { display: none !important; }
 @media (max-width: 520px) {
   .sba-grid-5, .sba-grid-4 { grid-template-columns: 1fr; }
 }
+
+/* Review screen */
+.sba-review { font-family: var(--font); color: var(--ink); }
+.sba-muted { color: var(--muted); font-size: 14px; }
+.sba-review-head { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; margin-bottom: 10px; }
+.sba-request { color: var(--muted); font-style: italic; font-size: 14px; }
+.sba-tier { font-size: 12px; font-weight: 600; letter-spacing: 0.04em; padding: 3px 8px; border-radius: 999px; }
+.sba-tier-high { background: #fbe9ea; color: var(--bad); }
+.sba-tier-medium { background: #fdf1e2; color: var(--warn); }
+.sba-tier-low { background: #e7f3ec; color: var(--ok); }
+.sba-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 14px; }
+.sba-chip { background: var(--surface); border-radius: var(--radius); padding: 4px 10px; font-size: 13px; }
+.sba-box { border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; margin: 10px 0;
+  background: var(--card); font-size: 14px; }
+.sba-box h4 { margin: 0 0 6px; font-size: 14px; font-weight: 600; color: var(--ink) !important; }
+.sba-box ul { margin: 0; padding-left: 18px; }
+.sba-box li { margin: 3px 0; line-height: 1.45; }
+.sba-block { border-color: #efc4c7; background: #fdf5f5; }
+.sba-side { border-color: #f0d9b5; background: #fffaf2; }
+.sba-clear { border-color: #bfe0cc; background: #f4faf6; }
+.sba-lab { border-color: #c9d2fb; background: #f3f5ff; }
+.sba-rule { font-family: ui-monospace, Menlo, monospace; font-size: 12px; background: var(--surface);
+  padding: 1px 6px; border-radius: 4px; }
+.sba-hard { font-size: 11px; color: var(--bad); font-weight: 600; }
+.sba-src { font-size: 12px; color: var(--muted); }
+.sba-act { font-size: 15px; font-weight: 600; margin: 18px 0 6px; color: var(--ink) !important; }
+.sba-act span { color: var(--muted); font-weight: 400; }
+table.sba-diff { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--card);
+  border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.sba-diff th { text-align: left; font-weight: 500; color: var(--muted); background: var(--paper);
+  padding: 7px 10px; border-bottom: 1px solid var(--line); }
+.sba-diff td { padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.sba-old { color: var(--muted); text-decoration: line-through; text-decoration-color: #d9b3b5; }
+.sba-new { color: var(--ok); }
+.sba-tag-add { display: inline-block; background: #e7f3ec; color: var(--ok); border-radius: 4px; padding: 1px 6px;
+  margin: 0 4px 2px 0; }
+.sba-tag-del { display: inline-block; background: #fbe9ea; color: var(--bad); border-radius: 4px; padding: 1px 6px; }
+.sba-route { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+.sba-msg { background: #eef1fd; border-radius: 10px 10px 10px 2px; padding: 8px 10px; white-space: pre-wrap;
+  line-height: 1.5; max-width: 520px; }
+.sba-msg[dir="rtl"] { border-radius: 10px 10px 2px 10px; text-align: right; font-family: "Noto Naskh Arabic",
+  "Geeza Pro", "Segoe UI", Tahoma, sans-serif; }
+.sba-notes { margin: 10px 0; font-size: 13px; color: var(--muted); }
+.sba-foot { font-size: 12px; color: var(--muted); margin-top: 10px; }
+.sba-result { border-radius: var(--radius); padding: 14px 16px; margin-top: 12px; font-size: 14px; }
+.sba-result h4 { margin: 0 0 6px; font-size: 15px; color: var(--ink) !important; }
+.sba-result-ok { background: #f4faf6; border: 1px solid #bfe0cc; }
+.sba-result-warn { background: #fffaf2; border: 1px solid #f0d9b5; }
+.sba-result-bad { background: #fdf5f5; border: 1px solid #efc4c7; }
+.sba-checks { list-style: none; padding: 0; margin: 6px 0; display: flex; gap: 14px; flex-wrap: wrap; }
+
+/* Telegram card */
+.sba-tg { border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; background: var(--card);
+  font-size: 14px; color: var(--ink); }
+.sba-tg h4 { margin: 0 0 10px; font-size: 16px; font-weight: 600; color: var(--ink) !important; }
+.sba-tg p { color: var(--muted); line-height: 1.5; margin: 10px 0 0; }
+.sba-tg-on { border-color: #bfe0cc; background: #f4faf6; }
+.sba-qr svg { width: 148px; height: 148px; display: block; }
+.sba-btn-tg { display: inline-block; margin-top: 10px; background: var(--navy-950); color: #fff !important;
+  border-radius: var(--radius); padding: 8px 14px; font-size: 13px; text-decoration: none; }

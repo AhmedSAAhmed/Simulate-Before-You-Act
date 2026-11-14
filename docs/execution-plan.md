@@ -163,6 +163,17 @@ Each phase ends at a check, in the ICM style. Nothing moves on until the check p
   - Live runs also caught two more problems, both fixed: the planner mistyping a label, which made the deletion silently match nothing (now a blocker that suggests the real label), and drift reports listing clock-only changes.
   - They found one real-world gap that's documented, not fixed: the CRM's own automation notifies opted-out customers.
   - Evidence is in `runs/_examples/`.
+- **P3** done; 53 tests pass. Both surfaces were tested live with the real models against Neon:
+  - **Web review screen:** a web run applied the fixes, accepted the automation, ran 19 writes that matched the prediction, then rolled back 19 of 19.
+  - **Telegram bot:** the owner tested from their phone, with buttons bound to plan hashes. See [ADR 0005](adr/0005-public-demo-sandboxes-and-telegram.md).
+  - **Fixes from the live runs:**
+    - The `getUpdates` timeout clash, and the poller dying on one dropped connection.
+    - Bot replies lost to connection drops (now retried, because nothing was sent).
+    - Browser sessions lost on every restart.
+    - The example request stuck on the planner's mistyped label (now a one-click fix).
+    - Tweaks re-running the critic (26 s; now reused).
+    - The SDK's 16 s wait on rate limits (now falls through to the next model).
+    - Too many database round trips: a simulation went from 47 queries and 23 s to 9 queries and 1.6 s from the Gulf; execution from 188 to 96 queries.
 
 | Phase | Dates | Work | Exit check |
 |---|---|---|---|

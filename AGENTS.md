@@ -31,6 +31,7 @@ A DOO-style ops copilot that simulates every write against real systems (Telegra
 ## Commands (from the repo root)
 
 - Run: `python -m sba` (serves on `http://localhost:7860`)
+- Run the Telegram bot locally: `python -m sba.bot --poll` (on Render the app sets a webhook instead)
 - Test: `python -m pytest`
 - Check keys: `python scripts/check_setup.py`
 - Reset the demo data: `python scripts/seed_demo.py`

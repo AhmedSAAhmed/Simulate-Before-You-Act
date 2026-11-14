@@ -4,7 +4,11 @@ An agent that thinks through consequences before it changes anything. Every writ
 
 Built for DOO's Builders League challenge *Simulate Before You Act*.
 
-> Status: Phase 2 done. The whole pipeline runs from the terminal against Neon and Telegram, with a real planner (Groq) and critic (Gemini); the review UI comes next. See [docs/execution-plan.md](docs/execution-plan.md). Example runs, including both failure tests, are in [runs/_examples/](runs/_examples/).
+> Status: Phase 3 done; the Render deploy is next.
+> - **Review screen:** the web page shows the before/after diff, blockers, side effects and undo path, and lets you approve, tweak or reject.
+> - **Telegram:** anyone can try the same flow from their phone with [@SimulateBeforeYouAct_bot](https://t.me/SimulateBeforeYouAct_bot). Each visitor gets their own sandbox, and the agent can only message them.
+>
+> See [docs/execution-plan.md](docs/execution-plan.md). Example runs, including both failure tests, are in [runs/_examples/](runs/_examples/).
 
 ## Pipeline
 

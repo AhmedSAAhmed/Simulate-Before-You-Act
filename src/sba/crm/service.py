@@ -3,12 +3,13 @@ so automations fire the same way no matter who made the change."""
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 from typing import Any
 
-from sqlalchemy import Engine, func, insert, select, update
+from sqlalchemy import Connection, Engine, func, insert, select, update
 from sqlalchemy.exc import IntegrityError
 
 from sba.crm.schema import (
@@ -52,18 +53,19 @@ class CrmService:
     sandbox: str = "demo"
     notifier: Notifier | None = None
     clock: Callable[[], datetime] = field(default=utcnow)
+    _bound: Connection | None = field(default=None, repr=False)
 
     # ---------- reads ----------
 
     def contact(self, contact_id: str) -> dict[str, Any] | None:
-        with self.engine.connect() as conn:
+        with self._read() as conn:
             row = conn.execute(
                 select(contacts).where(contacts.c.sandbox == self.sandbox, contacts.c.id == contact_id)
             ).mappings().first()
         return _contact(row) if row else None
 
     def contacts_with_label(self, label: str) -> list[dict[str, Any]]:
-        with self.engine.connect() as conn:
+        with self._read() as conn:
             rows = conn.execute(
                 select(contacts)
                 .where(contacts.c.sandbox == self.sandbox, contacts.c.deleted_at.is_(None))
@@ -71,9 +73,76 @@ class CrmService:
             ).mappings().all()
         return [_contact(r) for r in rows if label in (r["labels"] or [])]
 
+    # ---------- batched reads (one round trip each, however many records) ----------
+
+    def contacts_by_ids(self, ids: list[str]) -> dict[str, dict[str, Any]]:
+        if not ids:
+            return {}
+        with self._read() as conn:
+            rows = conn.execute(
+                select(contacts).where(contacts.c.sandbox == self.sandbox, contacts.c.id.in_(sorted(set(ids))))
+            ).mappings().all()
+        return {r["id"]: _contact(r) for r in rows}
+
+    def credited_for_charges(self, charge_ids: list[str]) -> dict[str, int]:
+        if not charge_ids:
+            return {}
+        with self._read() as conn:
+            rows = conn.execute(
+                select(wallet_ledger.c.charge_id, func.sum(wallet_ledger.c.amount_minor))
+                .where(wallet_ledger.c.sandbox == self.sandbox, wallet_ledger.c.charge_id.in_(charge_ids),
+                       wallet_ledger.c.kind.in_(("credit", "reversal")))
+                .group_by(wallet_ledger.c.charge_id)
+            ).all()
+        found = {cid: int(total) for cid, total in rows}
+        return {cid: found.get(cid, 0) for cid in charge_ids}
+
+    def wallet_balances(self, contact_ids: list[str]) -> dict[str, int]:
+        if not contact_ids:
+            return {}
+        with self._read() as conn:
+            rows = conn.execute(
+                select(wallet_ledger.c.contact_id, func.sum(wallet_ledger.c.amount_minor))
+                .where(wallet_ledger.c.sandbox == self.sandbox, wallet_ledger.c.contact_id.in_(contact_ids))
+                .group_by(wallet_ledger.c.contact_id)
+            ).all()
+        found = {cid: int(total) for cid, total in rows}
+        return {cid: found.get(cid, 0) for cid in contact_ids}
+
+    def open_ticket_counts(self, contact_ids: list[str]) -> dict[str, int]:
+        if not contact_ids:
+            return {}
+        with self._read() as conn:
+            rows = conn.execute(
+                select(tickets.c.contact_id, func.count())
+                .where(tickets.c.sandbox == self.sandbox, tickets.c.contact_id.in_(contact_ids),
+                       tickets.c.status == "open")
+                .group_by(tickets.c.contact_id)
+            ).all()
+        found = {cid: int(n) for cid, n in rows}
+        return {cid: found.get(cid, 0) for cid in contact_ids}
+
+    @contextmanager
+    def bound(self) -> Iterator[None]:
+        """Run every read inside this block on one connection: one checkout instead of one per query."""
+        with self.engine.connect() as conn:
+            self._bound = conn
+            try:
+                yield
+            finally:
+                self._bound = None
+
+    @contextmanager
+    def _read(self) -> Iterator[Connection]:
+        if self._bound is not None:
+            yield self._bound
+        else:
+            with self.engine.connect() as conn:
+                yield conn
+
     def label_counts(self) -> dict[str, int]:
         """Every label in use on active contacts, with how many contacts carry it."""
-        with self.engine.connect() as conn:
+        with self._read() as conn:
             rows = conn.execute(
                 select(contacts.c.labels).where(contacts.c.sandbox == self.sandbox, contacts.c.deleted_at.is_(None))
             ).all()
@@ -84,7 +153,7 @@ class CrmService:
         return counts
 
     def duplicate_charges_on(self, day: date) -> list[dict[str, Any]]:
-        with self.engine.connect() as conn:
+        with self._read() as conn:
             rows = conn.execute(
                 select(charges)
                 .where(
@@ -98,7 +167,7 @@ class CrmService:
 
     def credited_for_charge(self, charge_id: str) -> int:
         """Net amount already returned for a charge: credits minus reversals."""
-        with self.engine.connect() as conn:
+        with self._read() as conn:
             total = conn.execute(
                 select(func.coalesce(func.sum(wallet_ledger.c.amount_minor), 0)).where(
                     wallet_ledger.c.sandbox == self.sandbox,
@@ -109,7 +178,7 @@ class CrmService:
         return int(total)
 
     def wallet_balance(self, contact_id: str) -> int:
-        with self.engine.connect() as conn:
+        with self._read() as conn:
             total = conn.execute(
                 select(func.coalesce(func.sum(wallet_ledger.c.amount_minor), 0)).where(
                     wallet_ledger.c.sandbox == self.sandbox, wallet_ledger.c.contact_id == contact_id
@@ -118,7 +187,7 @@ class CrmService:
         return int(total)
 
     def open_tickets(self, contact_id: str) -> list[dict[str, Any]]:
-        with self.engine.connect() as conn:
+        with self._read() as conn:
             rows = conn.execute(
                 select(tickets).where(
                     tickets.c.sandbox == self.sandbox,
@@ -129,7 +198,7 @@ class CrmService:
         return [dict(r) for r in rows]
 
     def automation_rules(self) -> list[dict[str, Any]]:
-        with self.engine.connect() as conn:
+        with self._read() as conn:
             rows = conn.execute(
                 select(automation_rules)
                 .where(automation_rules.c.sandbox == self.sandbox, automation_rules.c.enabled.is_(True))
@@ -138,14 +207,14 @@ class CrmService:
         return [dict(r) for r in rows]
 
     def tickets_for_run(self, run_id: str) -> list[dict[str, Any]]:
-        with self.engine.connect() as conn:
+        with self._read() as conn:
             rows = conn.execute(
                 select(tickets).where(tickets.c.sandbox == self.sandbox, tickets.c.run_id == run_id)
             ).mappings().all()
         return [dict(r) for r in rows]
 
     def notifications_for_run(self, run_id: str) -> list[dict[str, Any]]:
-        with self.engine.connect() as conn:
+        with self._read() as conn:
             rows = conn.execute(
                 select(notifications).where(
                     notifications.c.sandbox == self.sandbox, notifications.c.run_id == run_id
@@ -154,21 +223,30 @@ class CrmService:
         return [dict(r) for r in rows]
 
     def ledger_for_run(self, run_id: str) -> list[dict[str, Any]]:
-        with self.engine.connect() as conn:
+        with self._read() as conn:
             rows = conn.execute(
                 select(wallet_ledger).where(wallet_ledger.c.sandbox == self.sandbox, wallet_ledger.c.run_id == run_id)
             ).mappings().all()
         return [dict(r) for r in rows]
 
+    def charges_by_ids(self, charge_ids: list[str]) -> dict[str, dict[str, Any]]:
+        if not charge_ids:
+            return {}
+        with self._read() as conn:
+            rows = conn.execute(
+                select(charges).where(charges.c.sandbox == self.sandbox, charges.c.id.in_(charge_ids))
+            ).mappings().all()
+        return {r["id"]: dict(r) for r in rows}
+
     def charge(self, charge_id: str) -> dict[str, Any] | None:
-        with self.engine.connect() as conn:
+        with self._read() as conn:
             row = conn.execute(
                 select(charges).where(charges.c.sandbox == self.sandbox, charges.c.id == charge_id)
             ).mappings().first()
         return dict(row) if row else None
 
     def get_snapshot(self, snapshot_id: int) -> dict[str, Any]:
-        with self.engine.connect() as conn:
+        with self._read() as conn:
             row = conn.execute(
                 select(snapshots).where(snapshots.c.sandbox == self.sandbox, snapshots.c.id == snapshot_id)
             ).mappings().one()
@@ -188,11 +266,9 @@ class CrmService:
         run_id: str | None = None,
         idempotency_key: str | None = None,
     ) -> int:
-        """Append one ledger row. Re-sending the same idempotency key returns the first row."""
-        if idempotency_key:
-            existing = self._ledger_id_for_key(idempotency_key)
-            if existing is not None:
-                return existing
+        """Append one ledger row. Re-sending the same idempotency key returns the first row.
+
+        The unique key does the deduplication, so the common path is a single insert."""
         row = {
             "sandbox": self.sandbox,
             "contact_id": contact_id,
@@ -289,7 +365,7 @@ class CrmService:
     # ---------- internals ----------
 
     def _ledger_id_for_key(self, key: str) -> int | None:
-        with self.engine.connect() as conn:
+        with self._read() as conn:
             found = conn.execute(
                 select(wallet_ledger.c.id).where(wallet_ledger.c.idempotency_key == key)
             ).scalar_one_or_none()

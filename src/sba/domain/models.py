@@ -70,6 +70,9 @@ class Blocker(_Frozen):
     rule: str
     detail: str
     hard: bool = Field(default=False, description="True: only excluding the item resolves it; no override")
+    fix: dict[str, Any] = Field(
+        default_factory=dict, description="A suggested plan edit, e.g. {'selector': {'label': 'spam-import-2026-11'}}"
+    )
 
 
 class SideEffect(_Frozen):
