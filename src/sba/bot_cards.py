@@ -10,7 +10,7 @@ from html import escape
 
 from sba.agents.executor import ExecutionResult
 from sba.domain.models import ActionKind, ActionPlan, JournalEntry, Simulation
-from sba.domain.money import fmt
+from sba.domain.money import count_phrase, fmt
 
 LIMIT = 3_900  # under Telegram's 4,096, with room for the footer
 
@@ -113,7 +113,7 @@ def result_card(result: ExecutionResult, plan: ActionPlan) -> tuple[str, dict | 
                 f"{len(v.diffs)} difference(s) found. Here's the new simulation; approve it again if it "
                 "still looks right."), None
     if v.outcome in ("rolled_back", "halted"):
-        extra = ", ".join(f"{n} unpredicted {k.replace('_', ' ')}" for k, n in v.unpredicted.items())
+        extra = ", ".join(count_phrase(n, k, adjective='unpredicted') for k, n in v.unpredicted.items())
         undone = sum(1 for u in v.rollback if u.status == "rolled_back")
         text = (f"🛑 <b>Stopped by the safety net.</b> {escape(v.summary)}\n\n"
                 + (f"What the simulator missed: {escape(extra)}.\n" if extra else "")

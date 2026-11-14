@@ -15,6 +15,7 @@ from sba.adapters.base import Adapter, ExecResult, idempotency_key
 from sba.agents import verifier
 from sba.agents.simulator import simulate
 from sba.domain.models import ActionKind, ActionPlan, Decision, Effect, Journal, JournalEntry, Simulation, Verification
+from sba.domain.money import count_phrase
 from sba.domain.policy import canary_size
 from sba.store.approvals import binding_errors
 
@@ -77,7 +78,7 @@ def execute_plan(
             diffs = verifier.record_diffs([d for d in done if d[0].action_index == index], adapters, kinds)
             extra = verifier.unpredicted(simulation, adapters, run_id)
             if diffs or extra:
-                what = ", ".join(f"{n} unpredicted {k.replace('_', ' ')}" for k, n in extra.items()) or \
+                what = ", ".join(count_phrase(n, k, adjective='unpredicted') for k, n in extra.items()) or \
                     f"{len(diffs)} record(s) differ from the prediction"
                 return _halt(plan, simulation, adapters, kinds, entries, done,
                              f"The {phase} for action {index} ({action.kind}) found {what}", diffs, extra)

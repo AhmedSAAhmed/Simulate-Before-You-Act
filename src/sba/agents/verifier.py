@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 
 from sba.adapters.base import Adapter, ExecResult, idempotency_key
+from sba.domain.money import count_phrase
 from sba.domain.models import (
     ActionKind,
     ActionPlan,
@@ -128,7 +129,7 @@ def report_markdown(plan: ActionPlan, simulation: Simulation, outcome: str, summ
     lines += ["", "## Rollback"] + ([f"- {u.item_id}: {u.status}. {u.detail}".rstrip() for u in undo] or
                                     ["- not needed"])
     lines += ["", "## What the simulator missed",
-              (", ".join(f"{n} {name.replace('_', ' ')}" for name, n in extra.items()) or "nothing"),
+              (", ".join(count_phrase(n, name) for name, n in extra.items()) or "nothing"),
               "", "## New simulator rule",
               ("Read the CRM's automation rules before predicting label changes (see blind spot 'automations')."
                if extra else "none")]

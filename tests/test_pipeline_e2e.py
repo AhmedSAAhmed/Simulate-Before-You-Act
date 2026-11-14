@@ -104,7 +104,7 @@ def test_blind_simulation_is_caught_by_the_canary_and_rolled_back(crm, adapters,
     assert all(t["status"] == "closed" for t in crm.tickets_for_run(plan.run_id))
     assert len(fake_telegram.deleted) == len(fake_telegram.sent) == 4 + 1  # apologies and the stray notice
     report = (tmp_path / plan.run_id / "05_verify" / "output" / "report.md").read_text(encoding="utf-8")
-    assert "1 tickets opened" in report and "automation rules" in report
+    assert "1 ticket opened" in report and "automation rules" in report
 
 
 def test_expired_approval_is_refused(crm, adapters, fake_telegram, tmp_path) -> None:

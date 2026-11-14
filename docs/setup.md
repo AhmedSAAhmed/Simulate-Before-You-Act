@@ -22,6 +22,8 @@ Order matters only for Render, which comes last.
 
 To test the bot locally, run `python -m sba.bot --poll`. On Render, the app registers its webhook by itself (it uses `RENDER_EXTERNAL_URL`), and that also replaces any local polling.
 
+**Local polling removes the webhook.** After a local test, restart the Render service, or run `python scripts/configure_bot.py --webhook https://<your-app>.onrender.com`. The same script sets the bot's public description and command menu.
+
 ## 2. Neon Postgres
 
 The app uses a local SQLite file until `DATABASE_URL` is set, so you can skip this step for local work.

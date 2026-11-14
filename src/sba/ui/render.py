@@ -8,7 +8,7 @@ import segno
 
 from sba.agents.executor import ExecutionResult
 from sba.domain.models import ActionKind, ActionPlan, Effect, JournalEntry, Simulation
-from sba.domain.money import fmt
+from sba.domain.money import count_phrase, fmt
 
 KIND_TITLE = {
     ActionKind.ISSUE_CREDIT: "Wallet credits",
@@ -106,7 +106,7 @@ def result(res: ExecutionResult) -> str:
     parts = [f'<div class="sba-result sba-result-{tone}"><h4>{escape(title)}</h4><p>{escape(v.summary)}</p>']
     if v.unpredicted:
         parts.append("<p><b>What the simulator missed:</b> " + ", ".join(
-            f"{n} {escape(k.replace('_', ' '))}" for k, n in v.unpredicted.items()) + "</p>")
+            escape(count_phrase(n, k)) for k, n in v.unpredicted.items()) + "</p>")
     if v.invariants:
         parts.append("<ul class='sba-checks'>" + "".join(
             f"<li>{'✔' if c.held else '✘'} {escape(c.name.replace('_', ' '))}</li>" for c in v.invariants) + "</ul>")
