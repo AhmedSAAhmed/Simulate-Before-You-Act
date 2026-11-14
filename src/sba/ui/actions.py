@@ -59,17 +59,23 @@ class WebActions:
         session = self.session(session_id)
         request = (request or "").strip() or DEMO_REQUEST
         try:
-            with self.services.sessions.slot(session, new_run=True):
+            with self.services.sessions.slot(session):
+                planned = self.services.sessions.take_model_request(session)
                 pipe = self.services.pipeline(session)
                 run_id = self.services.store.new_run_id(self.services.clock())
                 self.services.sessions.remember_run(session, run_id)
-                plan = pipe.plan(request, fallback_to_example=True, run_id=run_id)
+                plan = pipe.plan(request, use_example=not planned, fallback_to_example=True, run_id=run_id)
                 sim = pipe.simulate(plan, blind_spots=("automations",) if blind else ())
         except StageFailed as err:
             return View(notice=f"Couldn't turn that into something this demo can do: {err.why[:300]}")
         except RunLimit as err:
             return View(notice=str(err))
-        return self._review(plan, sim, blind)
+        view = self._review(plan, sim, blind)
+        if not planned:
+            view = replace(view, notice=f"You've used today's {self.services.sessions.daily_runs} model-planned "
+                                        "requests, so this run uses the example plan (no model call). "
+                                        "It resets tomorrow (UTC).")
+        return view
 
     def leave_out(self, session_id: str, run_id: str | None, shown_hash: str | None) -> View:
         return self._tweak(session_id, run_id, shown_hash, exclude=True, reason=None)
@@ -87,7 +93,7 @@ class WebActions:
             return loaded
         session, pipe, saved = loaded
         try:
-            with self.services.sessions.slot(session, new_run=False):
+            with self.services.sessions.slot(session):
                 decision = pipe.decide(saved.plan, saved.simulation, approver=approver or "Web reviewer",
                                        verdict="approve")
                 before = colleague_credits_first_customer(pipe.crm, saved.simulation) if drift else None
@@ -116,7 +122,7 @@ class WebActions:
         if not run_id or not self.services.sessions.owns(session, run_id):
             return View(notice="There's no run of yours to roll back.")
         try:
-            with self.services.sessions.slot(session, new_run=False):
+            with self.services.sessions.slot(session):
                 entries = self.services.pipeline(session).roll_back_completed(run_id)
         except (ValueError, RunLimit) as err:
             return View(run_id=run_id, notice=str(err))
@@ -131,7 +137,7 @@ class WebActions:
         session, pipe, saved = loaded
         tweaked = resolve_blockers(saved.plan, saved.simulation, exclude_items=exclude, accept_rules_reason=reason)
         try:
-            with self.services.sessions.slot(session, new_run=False):
+            with self.services.sessions.slot(session):
                 sim = pipe.simulate(tweaked, blind_spots=saved.blind_spots, reuse_critic_from=saved.simulation)
         except RunLimit as err:
             return View(run_id=run_id, shown_hash=shown_hash, notice=str(err))

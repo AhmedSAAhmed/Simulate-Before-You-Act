@@ -24,6 +24,8 @@ log = logging.getLogger(__name__)
 HTML = "HTML"
 STALE = ("⏱ That card is out of date: the plan changed after it was sent, so its buttons can't release "
          "anything. Use the newest card.")
+QUOTA_USED = ("🔎 You've used today's {n} model-planned requests, so this run uses the example plan (no model "
+              "call). Everything else works the same; your quota resets tomorrow (UTC).")
 
 
 @dataclass
@@ -97,13 +99,15 @@ class Bot:
 
     def _new_request(self, session: Session, request: str) -> None:
         chat_id = session.telegram_chat_id
-        with self.services.sessions.slot(session, new_run=True):
-            self._say(chat_id, "🔎 Planning and simulating against your copy of the CRM…")
+        with self.services.sessions.slot(session):
+            planned = self.services.sessions.take_model_request(session)
+            self._say(chat_id, "🔎 Planning and simulating against your copy of the CRM…" if planned else
+                      QUOTA_USED.format(n=self.services.sessions.daily_runs))
             pipe = self.services.pipeline(session)
             run_id = self.services.store.new_run_id(self.services.clock())
             self.services.sessions.remember_run(session, run_id)
             try:
-                plan = pipe.plan(request, fallback_to_example=True, run_id=run_id)
+                plan = pipe.plan(request, use_example=not planned, fallback_to_example=True, run_id=run_id)
             except StageFailed as err:
                 self._say(chat_id, "✏️ I couldn't turn that into something this demo can do (credits, "
                                    f"messages, tags, deletions).\n<i>{_short(err.why)}</i>\n\nTry /demo.")
@@ -139,7 +143,7 @@ class Bot:
             self.tg.edit_reply_markup(chat_id, message["message_id"])  # one press per card
         name = (cb.get("from") or {}).get("first_name") or "Telegram reviewer"
 
-        with self.services.sessions.slot(session, new_run=False):
+        with self.services.sessions.slot(session):
             plan, sim, blind = saved.plan, saved.simulation, saved.blind_spots
             if op in ("x", "y"):
                 tweaked = resolve_blockers(plan, sim, exclude_items=op == "x",

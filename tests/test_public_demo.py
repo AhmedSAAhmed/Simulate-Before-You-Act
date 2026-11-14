@@ -157,12 +157,26 @@ def test_group_chats_are_ignored(bot, fake_telegram) -> None:
     assert fake_telegram.sent == []
 
 
-def test_daily_limit_applies_to_new_requests(bot, services, fake_telegram) -> None:
+def test_past_the_daily_quota_runs_use_the_example_plan_instead_of_refusing(bot, services, fake_telegram) -> None:
+    """Found live: the owner hit the limit while testing and was locked out. Nobody should be."""
     services.sessions.daily_runs = 1
     bot.handle(message(A, "/start"))
     bot.handle(message(A, "credit back the doubles"))
+    model_calls = len(services.router._transport.calls)
     bot.handle(message(A, "credit back the doubles again"))
-    assert "new requests a day" in fake_telegram.texts_to(A)[-1]
+
+    texts = fake_telegram.texts_to(A)
+    assert any("used today's 1 model-planned requests" in t for t in texts)
+    card, _ = last_card(fake_telegram, A)
+    assert "Planner: example plan" in card  # a full simulation card, not a refusal
+    assert services.router._transport.calls[model_calls:].count("groq:planner-model") == 0
+
+
+def test_web_past_the_quota_still_simulates(services) -> None:
+    services.sessions.daily_runs = 0
+    web = WebActions(services)
+    view = web.simulate(web.session(None).id, "credit back the doubles", blind=False)
+    assert "blocker" in view.review_html and "example plan" in view.notice
 
 
 def test_forget_deletes_the_sandbox_and_runs(bot, services) -> None:

@@ -173,30 +173,31 @@ class SessionManager:
     # ---------- runs ----------
 
     @contextmanager
-    def slot(self, session: Session, *, new_run: bool) -> Iterator[None]:
-        """Hold the visitor's single working slot. A new request also counts against today's limit;
-        tweaks, approvals and rollbacks of an existing run don't."""
-        today = self.clock().date()
+    def slot(self, session: Session) -> Iterator[None]:
+        """Hold the visitor's single working slot: one run, tweak, approval or rollback at a time."""
         with self._lock:
             if session.id in self._busy:
                 raise RunLimit("a run is already in progress; wait for it to finish")
-            if new_run:
-                with self.engine.connect() as conn:
-                    row = conn.execute(select(sessions_table.c.runs_day, sessions_table.c.runs_today)
-                                       .where(sessions_table.c.id == session.id)).one()
-                count = row.runs_today if row.runs_day == today else 0
-                if count >= self.daily_runs:
-                    raise RunLimit(f"the demo allows {self.daily_runs} new requests a day per visitor; "
-                                   "try again tomorrow")
-                with self.engine.begin() as conn:
-                    conn.execute(update(sessions_table).where(sessions_table.c.id == session.id)
-                                 .values(runs_day=today, runs_today=count + 1))
             self._busy.add(session.id)
         try:
             yield
         finally:
             with self._lock:
                 self._busy.discard(session.id)
+
+    def take_model_request(self, session: Session) -> bool:
+        """Count one model-planned request. False once today's quota is used: the run then uses the
+        example plan (no model call) instead of being refused, so nobody is ever locked out."""
+        today = self.clock().date()
+        with self._lock, self.engine.begin() as conn:
+            row = conn.execute(select(sessions_table.c.runs_day, sessions_table.c.runs_today)
+                               .where(sessions_table.c.id == session.id)).one()
+            count = row.runs_today if row.runs_day == today else 0
+            if count >= self.daily_runs:
+                return False
+            conn.execute(update(sessions_table).where(sessions_table.c.id == session.id)
+                         .values(runs_day=today, runs_today=count + 1))
+            return True
 
     def remember_run(self, session: Session, run_id: str) -> None:
         with self.engine.begin() as conn:

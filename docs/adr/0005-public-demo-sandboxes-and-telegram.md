@@ -10,7 +10,7 @@ Anyone with the demo link should be able to try a real run, including from their
 - **The visitor's chat is their demo inbox.** A Telegram bot can only message people who pressed Start, so the agent can't reach a stranger even if a request tries to steer it. Visitors without a linked phone get **held** messages: simulated and journaled, never sent.
 - **The web page links to the phone** with a one-time code in the bot's start link (QR code plus button). Pressing Start attaches the chat to that browser's sandbox; both surfaces then drive the same runs.
 - **Binding survives the chat.** Every button carries the run id and the plan-hash prefix it was drawn for. A button from an older card is refused, as is a run owned by another visitor.
-- **Guardrails:** direct messages only; one run at a time and 10 new requests a day per visitor; the daily model budget falls back to the example plan instead of failing; Telegram's per-chat pacing and `retry_after` are honoured; data is deleted after 7 days or on `/forget`.
+- **Guardrails:** direct messages only; one run at a time; 10 model-planned requests a day per visitor, after which runs use the example plan instead of being refused; the daily model budget falls back to the example plan instead of failing; Telegram's per-chat pacing and `retry_after` are honoured; data is deleted after 7 days or on `/forget`.
 - **Webhook on Render, polling locally.** On boot, the app registers its webhook (`RENDER_EXTERNAL_URL`) with a secret derived from the bot token, which Telegram echoes back in a header; `python -m sba.bot --poll` serves local testing.
 
 ## Alternatives considered
