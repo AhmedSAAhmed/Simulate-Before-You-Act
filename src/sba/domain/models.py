@@ -76,6 +76,9 @@ class SideEffect(_Frozen):
     description: str
     likelihood: str = Field(pattern="^(low|medium|high)$")
     source: str = Field(description="'engine' or 'critic'")
+    expected: dict[str, int] = Field(
+        default_factory=dict, description="Counts the verifier can check, e.g. {'tickets_opened': 7}"
+    )
 
 
 class Simulation(_Frozen):
@@ -98,3 +101,44 @@ class Decision(_Frozen):
     approver: str
     decided_at: datetime
     expires_at: datetime
+
+
+class JournalEntry(_Frozen):
+    action_index: int
+    item_id: str
+    phase: str = Field(pattern="^(canary|batch|rollback)$")
+    idempotency_key: str
+    status: str = Field(description="done | unknown | failed | needs_recovery | rolled_back")
+    external_ref: str | None = None
+    snapshot_ref: int | None = None
+    detail: str = ""
+
+
+class Journal(_Frozen):
+    run_id: str
+    outcome: str = Field(description="completed | halted | drift | refused")
+    reason: str = ""
+    entries: tuple[JournalEntry, ...] = ()
+
+
+class Diff(_Frozen):
+    action_index: int
+    record_id: str
+    field: str
+    predicted: Any
+    observed: Any
+
+
+class InvariantResult(_Frozen):
+    name: str
+    held: bool
+    detail: str = ""
+
+
+class Verification(_Frozen):
+    outcome: str = Field(description="match | rolled_back | halted | drift | refused")
+    summary: str
+    diffs: tuple[Diff, ...] = ()
+    unpredicted: dict[str, int] = Field(default_factory=dict)
+    invariants: tuple[InvariantResult, ...] = ()
+    rollback: tuple[JournalEntry, ...] = ()

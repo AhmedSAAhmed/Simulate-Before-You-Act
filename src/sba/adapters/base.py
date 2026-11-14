@@ -90,15 +90,12 @@ def item_controls(action: Action) -> tuple[frozenset[str], dict[str, str]]:
     return frozenset(exclude), {k: v.strip() for k, v in override.items()}
 
 
-def require_keys(
-    where: str, given: dict[str, Any], allowed: frozenset[str], required: frozenset[str] = frozenset()
-) -> None:
-    unknown = set(given) - allowed
-    missing = set(required) - set(given)
-    if unknown:
-        raise SelectorError(f"{where}: unknown keys {sorted(unknown)}")
-    if missing:
-        raise SelectorError(f"{where}: missing keys {sorted(missing)}")
+def check_shape(action: Action, index: int) -> None:
+    """Refuse selector or params keys outside the action's spec (see `specs.py`)."""
+    from sba.adapters.specs import static_errors
+
+    if errors := static_errors(action, index):
+        raise SelectorError("; ".join(errors))
 
 
 def from_action_targets(index: int, selector: dict[str, Any], ctx: SimContext) -> list[Target]:

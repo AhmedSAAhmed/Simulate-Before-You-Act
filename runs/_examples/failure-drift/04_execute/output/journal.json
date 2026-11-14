@@ -1,0 +1,6 @@
+{
+  "run_id": "r-20261114-072318-717b",
+  "outcome": "drift",
+  "reason": "The data changed after approval (4 difference(s)). Nothing was written. Review the new simulation and approve it again.",
+  "entries": []
+}

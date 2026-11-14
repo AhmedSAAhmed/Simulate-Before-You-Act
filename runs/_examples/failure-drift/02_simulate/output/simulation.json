@@ -1,0 +1,347 @@
+{
+  "plan_hash": "7849ee812fad65c52a394e5dc17cc930d91b1361d26cd5bd925645d8393318e2",
+  "state_fingerprint": "6760c49daf370e8b87d57d956fc79d96ea707ea2af009f3567fdee248c7ffe46",
+  "effects": [
+    {
+      "action_index": 0,
+      "system": "crm.wallet",
+      "record_id": "ch_d01",
+      "subject": "Demo Reviewer (c_001)",
+      "before": {
+        "wallet_balance": 2000,
+        "credited_for_charge": 0,
+        "currency": "BHD"
+      },
+      "after": {
+        "wallet_balance": 14500,
+        "credited_for_charge": 12500,
+        "credit": 12500,
+        "contact_id": "c_001",
+        "currency": "BHD"
+      }
+    },
+    {
+      "action_index": 0,
+      "system": "crm.wallet",
+      "record_id": "ch_d02",
+      "subject": "Sara Al-Mansouri (c_002)",
+      "before": {
+        "wallet_balance": 0,
+        "credited_for_charge": 0,
+        "currency": "BHD"
+      },
+      "after": {
+        "wallet_balance": 8750,
+        "credited_for_charge": 8750,
+        "credit": 8750,
+        "contact_id": "c_002",
+        "currency": "BHD"
+      }
+    },
+    {
+      "action_index": 0,
+      "system": "crm.wallet",
+      "record_id": "ch_d06",
+      "subject": "Layla Hassan (c_006)",
+      "before": {
+        "wallet_balance": 500,
+        "credited_for_charge": 0,
+        "currency": "BHD"
+      },
+      "after": {
+        "wallet_balance": 30500,
+        "credited_for_charge": 30000,
+        "credit": 30000,
+        "contact_id": "c_006",
+        "currency": "BHD"
+      }
+    },
+    {
+      "action_index": 0,
+      "system": "crm.wallet",
+      "record_id": "ch_d07",
+      "subject": "Fatima Al-Zahra (c_007)",
+      "before": {
+        "wallet_balance": 500,
+        "credited_for_charge": 0,
+        "currency": "BHD"
+      },
+      "after": {
+        "wallet_balance": 10400,
+        "credited_for_charge": 9900,
+        "credit": 9900,
+        "contact_id": "c_007",
+        "currency": "BHD"
+      }
+    },
+    {
+      "action_index": 0,
+      "system": "crm.wallet",
+      "record_id": "ch_d08",
+      "subject": "Khalid Nasser (c_008)",
+      "before": {
+        "wallet_balance": 0,
+        "credited_for_charge": 0,
+        "currency": "BHD"
+      },
+      "after": {
+        "wallet_balance": 11000,
+        "credited_for_charge": 11000,
+        "credit": 11000,
+        "contact_id": "c_008",
+        "currency": "BHD"
+      }
+    },
+    {
+      "action_index": 0,
+      "system": "crm.wallet",
+      "record_id": "ch_d09",
+      "subject": "Mariam Saleh (c_009)",
+      "before": {
+        "wallet_balance": 750,
+        "credited_for_charge": 0,
+        "currency": "BHD"
+      },
+      "after": {
+        "wallet_balance": 5250,
+        "credited_for_charge": 4500,
+        "credit": 4500,
+        "contact_id": "c_009",
+        "currency": "BHD"
+      }
+    },
+    {
+      "action_index": 1,
+      "system": "telegram",
+      "record_id": "c_001",
+      "subject": "Demo Reviewer (c_001)",
+      "before": {
+        "messages_from_this_run": 0
+      },
+      "after": {
+        "route": "own chat",
+        "chat_id": "111",
+        "language": "en",
+        "text": "Hi Demo Reviewer, we charged you twice by mistake yesterday. We've credited BHD 12.500 back to your wallet, and there's nothing you need to do. Sorry for the trouble. The Support Team"
+      }
+    },
+    {
+      "action_index": 1,
+      "system": "telegram",
+      "record_id": "c_002",
+      "subject": "Sara Al-Mansouri (c_002)",
+      "before": {
+        "messages_from_this_run": 0
+      },
+      "after": {
+        "route": "demo inbox",
+        "chat_id": "999",
+        "language": "ar",
+        "text": "To: Sara Al-Mansouri · demo inbox\n\nمرحباً Sara Al-Mansouri، خُصم المبلغ منك مرتين بالخطأ أمس. أعدنا BHD 8.750 إلى محفظتك، ولا يلزمك أي إجراء. نعتذر عن الإزعاج. فريق الدعم"
+      }
+    },
+    {
+      "action_index": 1,
+      "system": "telegram",
+      "record_id": "c_006",
+      "subject": "Layla Hassan (c_006)",
+      "before": {
+        "messages_from_this_run": 0
+      },
+      "after": {
+        "route": "demo inbox",
+        "chat_id": "999",
+        "language": "en",
+        "text": "To: Layla Hassan · demo inbox\n\nHi Layla Hassan, we charged you twice by mistake yesterday. We've credited BHD 30.000 back to your wallet, and there's nothing you need to do. Sorry for the trouble. The Support Team"
+      }
+    },
+    {
+      "action_index": 1,
+      "system": "telegram",
+      "record_id": "c_007",
+      "subject": "Fatima Al-Zahra (c_007)",
+      "before": {
+        "messages_from_this_run": 0
+      },
+      "after": {
+        "route": "demo inbox",
+        "chat_id": "999",
+        "language": "ar",
+        "text": "To: Fatima Al-Zahra · demo inbox\n\nمرحباً Fatima Al-Zahra، خُصم المبلغ منك مرتين بالخطأ أمس. أعدنا BHD 9.900 إلى محفظتك، ولا يلزمك أي إجراء. نعتذر عن الإزعاج. فريق الدعم"
+      }
+    },
+    {
+      "action_index": 2,
+      "system": "crm.contacts",
+      "record_id": "c_001",
+      "subject": "Demo Reviewer (c_001)",
+      "before": {
+        "labels": []
+      },
+      "after": {
+        "labels": [
+          "dup-charge-2026-11"
+        ]
+      }
+    },
+    {
+      "action_index": 2,
+      "system": "crm.contacts",
+      "record_id": "c_002",
+      "subject": "Sara Al-Mansouri (c_002)",
+      "before": {
+        "labels": []
+      },
+      "after": {
+        "labels": [
+          "dup-charge-2026-11"
+        ]
+      }
+    },
+    {
+      "action_index": 2,
+      "system": "crm.contacts",
+      "record_id": "c_006",
+      "subject": "Layla Hassan (c_006)",
+      "before": {
+        "labels": []
+      },
+      "after": {
+        "labels": [
+          "dup-charge-2026-11"
+        ]
+      }
+    },
+    {
+      "action_index": 2,
+      "system": "crm.contacts",
+      "record_id": "c_007",
+      "subject": "Fatima Al-Zahra (c_007)",
+      "before": {
+        "labels": []
+      },
+      "after": {
+        "labels": [
+          "dup-charge-2026-11"
+        ]
+      }
+    },
+    {
+      "action_index": 2,
+      "system": "crm.contacts",
+      "record_id": "c_008",
+      "subject": "Khalid Nasser (c_008)",
+      "before": {
+        "labels": []
+      },
+      "after": {
+        "labels": [
+          "dup-charge-2026-11"
+        ]
+      }
+    },
+    {
+      "action_index": 2,
+      "system": "crm.contacts",
+      "record_id": "c_009",
+      "subject": "Mariam Saleh (c_009)",
+      "before": {
+        "labels": []
+      },
+      "after": {
+        "labels": [
+          "dup-charge-2026-11"
+        ]
+      }
+    },
+    {
+      "action_index": 3,
+      "system": "crm.contacts",
+      "record_id": "c_101",
+      "subject": "Imported lead 1 (c_101)",
+      "before": {
+        "status": "active",
+        "open_tickets": 0
+      },
+      "after": {
+        "status": "soft-deleted",
+        "purge_after": "2026-11-15T07:23:42+00:00"
+      }
+    },
+    {
+      "action_index": 3,
+      "system": "crm.contacts",
+      "record_id": "c_102",
+      "subject": "Imported lead 2 (c_102)",
+      "before": {
+        "status": "active",
+        "open_tickets": 0
+      },
+      "after": {
+        "status": "soft-deleted",
+        "purge_after": "2026-11-15T07:23:42+00:00"
+      }
+    },
+    {
+      "action_index": 3,
+      "system": "crm.contacts",
+      "record_id": "c_104",
+      "subject": "Imported lead 4 (c_104)",
+      "before": {
+        "status": "active",
+        "open_tickets": 0
+      },
+      "after": {
+        "status": "soft-deleted",
+        "purge_after": "2026-11-15T07:23:42+00:00"
+      }
+    }
+  ],
+  "side_effects": [
+    {
+      "description": "Automation 'Billing follow-up' fires for 6 contacts: it opens 6 billing tickets and sends 6 Telegram notices.",
+      "likelihood": "high",
+      "source": "engine",
+      "expected": {
+        "tickets_opened": 6,
+        "notices_sent": 6
+      }
+    }
+  ],
+  "blockers": [],
+  "impacted": [
+    "Demo Reviewer (c_001)",
+    "Fatima Al-Zahra (c_007)",
+    "Imported lead 1 (c_101)",
+    "Imported lead 2 (c_102)",
+    "Imported lead 4 (c_104)",
+    "Khalid Nasser (c_008)",
+    "Layla Hassan (c_006)",
+    "Mariam Saleh (c_009)",
+    "Sara Al-Mansouri (c_002)"
+  ],
+  "rollback": [
+    "0. issue_credit: Reverse each credit with a matching debit while the wallet still holds it. Credit a customer has already spent can only be recovered by asking them.",
+    "1. send_message: Recall each message with deleteMessage within 48 hours. A customer may already have read it, so a short correction message is drafted as well.",
+    "2. update_contact_attributes: Restore each contact's previous labels from the snapshot, and close any tickets that automations opened because of this run.",
+    "3. delete_contacts: Undelete from the snapshot any time before the purge at 2026-11-15 07:23 UTC; after the purge the records are gone."
+  ],
+  "notes": [
+    "ch_d03 for Youssef Rami (c_003) left out automatically: already credited BHD 23.000 of BHD 23.000.",
+    "ch_d04 for Nadia Habib (c_004) left out by the operator.",
+    "ch_d05 for Omar Khalil (c_005) left out by the operator.",
+    "Khalid Nasser (c_008) left out by the operator.",
+    "Mariam Saleh (c_009) left out by the operator.",
+    "Automation 'Billing follow-up' fires for 6 contacts: it opens 6 billing tickets and sends 6 Telegram notices. Accepted by the operator: Billing wants a ticket for every affected customer",
+    "Imported lead 3 (c_103) left out by the operator."
+  ],
+  "tier": "HIGH",
+  "totals": {
+    "credits": 6,
+    "credit_total_minor": 76650,
+    "currency": "BHD",
+    "messages": 4,
+    "label_changes": 6,
+    "deletions": 3
+  }
+}

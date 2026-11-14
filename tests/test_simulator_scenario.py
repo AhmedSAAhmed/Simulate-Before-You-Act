@@ -101,6 +101,22 @@ def test_unsafe_selector_becomes_a_hard_blocker(adapters) -> None:
     assert sim.effects == ()
 
 
+def test_a_mistyped_label_blocks_and_suggests_the_real_one(adapters) -> None:
+    """Found live: the planner wrote 'spam-import-2026-11-13' and the deletion silently matched nothing."""
+    plan = demo_plan()
+    typo = plan.actions[3].model_copy(update={"selector": {"label": "spam-import-2026-11-13"}})
+    sim = simulate(plan.model_copy(update={"actions": plan.actions[:3] + (typo,)}), adapters, now=NOW)
+    empty = [b for b in sim.blockers if b.rule == "empty_selector"]
+    assert empty and empty[0].hard and "Did you mean 'spam-import-2026-11' (4 contacts)?" in empty[0].detail
+
+
+def test_any_action_that_matches_nothing_is_a_blocker(adapters) -> None:
+    plan = ActionPlan(run_id="r", request="credit last year's doubles", actions=(
+        Action(kind=ActionKind.ISSUE_CREDIT, selector={"charges_created_on": "2025-01-01", "duplicates_only": True}),
+    ))
+    assert [b.rule for b in simulate(plan, adapters, now=NOW).blockers] == ["empty_selector"]
+
+
 def test_unreachable_chat_is_a_hard_blocker(adapters, fake_telegram) -> None:
     fake_telegram.blocked.add("111")
     sim = simulate(demo_plan(), adapters, now=NOW)

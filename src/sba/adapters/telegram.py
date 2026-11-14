@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -16,10 +17,10 @@ from sba.adapters.base import (
     SimContext,
     Target,
     from_action_targets,
+    check_shape,
     item_controls,
-    require_keys,
 )
-from sba.crm.service import CrmService
+from sba.crm.service import CrmService, Notice, Notifier
 from sba.domain.models import Action, ActionKind, Blocker, Effect, SideEffect
 from sba.domain.money import fmt
 
@@ -82,9 +83,7 @@ class MessageAdapter:
     _reachable: dict[str, str] = field(default_factory=dict, repr=False)
 
     def simulate(self, index: int, action: Action, ctx: SimContext) -> ActionSim:
-        require_keys("selector", action.selector, frozenset({"from_action"}), frozenset({"from_action"}))
-        require_keys("params", action.params, frozenset({"templates", "exclude", "override"}),
-                     frozenset({"templates"}))
+        check_shape(action, index)
         templates = action.params["templates"]
         if not isinstance(templates, dict) or not all(
             k in LANGUAGES and isinstance(v, str) and v.strip() for k, v in templates.items()
@@ -204,6 +203,38 @@ class MessageAdapter:
     def observe(self, effect: Effect) -> dict[str, Any]:
         # The Bot API can't read a sent message back; the journal's send receipt is the evidence.
         return {"route": effect.after["route"]}
+
+
+def telegram_notifier(client: TelegramClient, demo_chat_id: str | None) -> Notifier:
+    """How the CRM's automations deliver their notices: same routing as agent messages."""
+
+    def send(notice: Notice) -> str | None:
+        if notice.telegram_chat_id is None:
+            return None
+        if notice.telegram_chat_id == "demo":
+            if not demo_chat_id:
+                return None
+            target, text = demo_chat_id, f"To: {notice.contact_name} · demo inbox\n\n{notice.text}"
+        else:
+            target, text = notice.telegram_chat_id, notice.text
+        try:
+            sent = client.send_message(target, text)
+        except TelegramError:
+            return None  # recorded as an undelivered notice (delivery_ref stays empty)
+        return f"{target}:{sent['message_id']}"
+
+    return send
+
+
+def telegram_recall(client: TelegramClient) -> Callable[[str], bool]:
+    def recall(delivery_ref: str) -> bool:
+        chat_id, message_id = delivery_ref.rsplit(":", 1)
+        try:
+            return client.delete_message(chat_id, int(message_id))
+        except TelegramError:
+            return False
+
+    return recall
 
 
 def _one_per_contact(targets: list[Target]) -> list[Target]:

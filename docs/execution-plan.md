@@ -153,7 +153,16 @@ Simulate-Before-You-Act/
 
 Each phase ends at a check, in the ICM style. Nothing moves on until the check passes.
 
-**Progress (2026-11-14):** P0 done, except the Render deploy, which is the owner's step. P1 done: the live simulation on Neon reproduces the hand-computed numbers (`tests/test_simulator_scenario.py`), and 25 tests pass. A live run also caught a real bug: network errors were reported as "customer blocked the bot". That's now fixed, with a regression test.
+**Progress (2026-11-14):**
+- **P0** done, except the Render deploy, which is the owner's step.
+- **P1** done. The live simulation on Neon reproduces the hand-computed numbers (`tests/test_simulator_scenario.py`). A live run caught network errors being reported as "customer blocked the bot"; that's fixed.
+- **P2** done; 35 tests pass. Live on Neon with the real planner (Groq gpt-oss-120b) and critic (Gemini 3.5 Flash-Lite):
+  - The full run matched its prediction.
+  - The blind-spot run was halted by the canary and rolled back 11 writes.
+  - The drift run was refused before any write.
+  - Live runs also caught two more problems, both fixed: the planner mistyping a label, which made the deletion silently match nothing (now a blocker that suggests the real label), and drift reports listing clock-only changes.
+  - They found one real-world gap that's documented, not fixed: the CRM's own automation notifies opted-out customers.
+  - Evidence is in `runs/_examples/`.
 
 | Phase | Dates | Work | Exit check |
 |---|---|---|---|

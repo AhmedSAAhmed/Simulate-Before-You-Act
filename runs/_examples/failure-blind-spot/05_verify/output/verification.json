@@ -1,0 +1,138 @@
+{
+  "outcome": "rolled_back",
+  "summary": "The canary for action 2 (update_contact_attributes) found 1 unpredicted tickets opened, 1 unpredicted notices sent. The run stopped there. Everything that ran was rolled back.",
+  "diffs": [],
+  "unpredicted": {
+    "tickets_opened": 1,
+    "notices_sent": 1
+  },
+  "invariants": [
+    {
+      "name": "credit_within_duplicate",
+      "held": true,
+      "detail": ""
+    },
+    {
+      "name": "no_charge_credited_twice",
+      "held": true,
+      "detail": ""
+    },
+    {
+      "name": "wallets_match_prediction",
+      "held": true,
+      "detail": ""
+    }
+  ],
+  "rollback": [
+    {
+      "action_index": 2,
+      "item_id": "c_001",
+      "phase": "rollback",
+      "idempotency_key": "r-20261114-071840-883b:2:c_001:rollback",
+      "status": "rolled_back",
+      "external_ref": null,
+      "snapshot_ref": null,
+      "detail": "labels restored; 1 automation tickets closed; 1 notices recalled"
+    },
+    {
+      "action_index": 1,
+      "item_id": "c_007",
+      "phase": "rollback",
+      "idempotency_key": "r-20261114-071840-883b:1:c_007:rollback",
+      "status": "rolled_back",
+      "external_ref": null,
+      "snapshot_ref": null,
+      "detail": "message recalled"
+    },
+    {
+      "action_index": 1,
+      "item_id": "c_006",
+      "phase": "rollback",
+      "idempotency_key": "r-20261114-071840-883b:1:c_006:rollback",
+      "status": "rolled_back",
+      "external_ref": null,
+      "snapshot_ref": null,
+      "detail": "message recalled"
+    },
+    {
+      "action_index": 1,
+      "item_id": "c_002",
+      "phase": "rollback",
+      "idempotency_key": "r-20261114-071840-883b:1:c_002:rollback",
+      "status": "rolled_back",
+      "external_ref": null,
+      "snapshot_ref": null,
+      "detail": "message recalled"
+    },
+    {
+      "action_index": 1,
+      "item_id": "c_001",
+      "phase": "rollback",
+      "idempotency_key": "r-20261114-071840-883b:1:c_001:rollback",
+      "status": "rolled_back",
+      "external_ref": null,
+      "snapshot_ref": null,
+      "detail": "message recalled"
+    },
+    {
+      "action_index": 0,
+      "item_id": "ch_d09",
+      "phase": "rollback",
+      "idempotency_key": "r-20261114-071840-883b:0:ch_d09:rollback",
+      "status": "rolled_back",
+      "external_ref": "ledger:34",
+      "snapshot_ref": null,
+      "detail": ""
+    },
+    {
+      "action_index": 0,
+      "item_id": "ch_d08",
+      "phase": "rollback",
+      "idempotency_key": "r-20261114-071840-883b:0:ch_d08:rollback",
+      "status": "rolled_back",
+      "external_ref": "ledger:35",
+      "snapshot_ref": null,
+      "detail": ""
+    },
+    {
+      "action_index": 0,
+      "item_id": "ch_d07",
+      "phase": "rollback",
+      "idempotency_key": "r-20261114-071840-883b:0:ch_d07:rollback",
+      "status": "rolled_back",
+      "external_ref": "ledger:36",
+      "snapshot_ref": null,
+      "detail": ""
+    },
+    {
+      "action_index": 0,
+      "item_id": "ch_d06",
+      "phase": "rollback",
+      "idempotency_key": "r-20261114-071840-883b:0:ch_d06:rollback",
+      "status": "rolled_back",
+      "external_ref": "ledger:37",
+      "snapshot_ref": null,
+      "detail": ""
+    },
+    {
+      "action_index": 0,
+      "item_id": "ch_d02",
+      "phase": "rollback",
+      "idempotency_key": "r-20261114-071840-883b:0:ch_d02:rollback",
+      "status": "rolled_back",
+      "external_ref": "ledger:38",
+      "snapshot_ref": null,
+      "detail": ""
+    },
+    {
+      "action_index": 0,
+      "item_id": "ch_d01",
+      "phase": "rollback",
+      "idempotency_key": "r-20261114-071840-883b:0:ch_d01:rollback",
+      "status": "rolled_back",
+      "external_ref": "ledger:39",
+      "snapshot_ref": null,
+      "detail": ""
+    }
+  ]
+}

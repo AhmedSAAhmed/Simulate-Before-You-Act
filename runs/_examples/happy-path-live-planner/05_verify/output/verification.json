@@ -1,0 +1,24 @@
+{
+  "outcome": "match",
+  "summary": "All 16 writes ran and matched the prediction.",
+  "diffs": [],
+  "unpredicted": {},
+  "invariants": [
+    {
+      "name": "credit_within_duplicate",
+      "held": true,
+      "detail": ""
+    },
+    {
+      "name": "no_charge_credited_twice",
+      "held": true,
+      "detail": ""
+    },
+    {
+      "name": "wallets_match_prediction",
+      "held": true,
+      "detail": ""
+    }
+  ],
+  "rollback": []
+}

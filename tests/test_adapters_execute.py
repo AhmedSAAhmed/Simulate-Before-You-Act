@@ -22,7 +22,8 @@ def test_credit_executes_once_and_reverses_while_unspent(adapters, crm) -> None:
     first = credit.execute(effect, run_id=RUN)
     again = credit.execute(effect, run_id=RUN)  # a retry with the same idempotency key
     assert first.status == "done" and first.external_ref == again.external_ref
-    assert credit.observe(effect) == {"wallet_balance": 14_500, "credited_for_charge": 12_500}
+    assert credit.observe(effect) == {"credited_for_charge": 12_500}
+    assert crm.wallet_balance("c_001") == 14_500
 
     undone = credit.compensate(effect, first, run_id=RUN)
     assert undone.status == "rolled_back"

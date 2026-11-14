@@ -35,6 +35,8 @@ A DOO-style ops copilot that simulates every write against real systems (Telegra
 - Check keys: `python scripts/check_setup.py`
 - Reset the demo data: `python scripts/seed_demo.py`
 - Simulate the demo plan (writes nothing): `python scripts/simulate_demo.py [--resolved] [--blind automations]`
+- One full run: `python scripts/run_demo.py --help` (executes only with `--approve NAME`)
+- Re-check a stage: `python -m sba.checks <intent|simulate|present|execute|verify> {run-id}`
 
 ## The one rule
 

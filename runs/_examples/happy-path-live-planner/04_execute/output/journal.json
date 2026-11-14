@@ -1,0 +1,167 @@
+{
+  "run_id": "r-20261114-071507-7b28",
+  "outcome": "completed",
+  "reason": "",
+  "entries": [
+    {
+      "action_index": 0,
+      "item_id": "ch_d01",
+      "phase": "canary",
+      "idempotency_key": "r-20261114-071507-7b28:0:ch_d01",
+      "status": "done",
+      "external_ref": "ledger:15",
+      "snapshot_ref": null,
+      "detail": ""
+    },
+    {
+      "action_index": 0,
+      "item_id": "ch_d02",
+      "phase": "batch",
+      "idempotency_key": "r-20261114-071507-7b28:0:ch_d02",
+      "status": "done",
+      "external_ref": "ledger:16",
+      "snapshot_ref": null,
+      "detail": ""
+    },
+    {
+      "action_index": 0,
+      "item_id": "ch_d06",
+      "phase": "batch",
+      "idempotency_key": "r-20261114-071507-7b28:0:ch_d06",
+      "status": "done",
+      "external_ref": "ledger:17",
+      "snapshot_ref": null,
+      "detail": ""
+    },
+    {
+      "action_index": 0,
+      "item_id": "ch_d07",
+      "phase": "batch",
+      "idempotency_key": "r-20261114-071507-7b28:0:ch_d07",
+      "status": "done",
+      "external_ref": "ledger:18",
+      "snapshot_ref": null,
+      "detail": ""
+    },
+    {
+      "action_index": 0,
+      "item_id": "ch_d08",
+      "phase": "batch",
+      "idempotency_key": "r-20261114-071507-7b28:0:ch_d08",
+      "status": "done",
+      "external_ref": "ledger:19",
+      "snapshot_ref": null,
+      "detail": ""
+    },
+    {
+      "action_index": 0,
+      "item_id": "ch_d09",
+      "phase": "batch",
+      "idempotency_key": "r-20261114-071507-7b28:0:ch_d09",
+      "status": "done",
+      "external_ref": "ledger:20",
+      "snapshot_ref": null,
+      "detail": ""
+    },
+    {
+      "action_index": 1,
+      "item_id": "c_001",
+      "phase": "canary",
+      "idempotency_key": "r-20261114-071507-7b28:1:c_001",
+      "status": "done",
+      "external_ref": null,
+      "snapshot_ref": 1,
+      "detail": ""
+    },
+    {
+      "action_index": 1,
+      "item_id": "c_002",
+      "phase": "batch",
+      "idempotency_key": "r-20261114-071507-7b28:1:c_002",
+      "status": "done",
+      "external_ref": null,
+      "snapshot_ref": 2,
+      "detail": ""
+    },
+    {
+      "action_index": 1,
+      "item_id": "c_006",
+      "phase": "batch",
+      "idempotency_key": "r-20261114-071507-7b28:1:c_006",
+      "status": "done",
+      "external_ref": null,
+      "snapshot_ref": 3,
+      "detail": ""
+    },
+    {
+      "action_index": 1,
+      "item_id": "c_007",
+      "phase": "batch",
+      "idempotency_key": "r-20261114-071507-7b28:1:c_007",
+      "status": "done",
+      "external_ref": null,
+      "snapshot_ref": 4,
+      "detail": ""
+    },
+    {
+      "action_index": 1,
+      "item_id": "c_008",
+      "phase": "batch",
+      "idempotency_key": "r-20261114-071507-7b28:1:c_008",
+      "status": "done",
+      "external_ref": null,
+      "snapshot_ref": 5,
+      "detail": ""
+    },
+    {
+      "action_index": 1,
+      "item_id": "c_009",
+      "phase": "batch",
+      "idempotency_key": "r-20261114-071507-7b28:1:c_009",
+      "status": "done",
+      "external_ref": null,
+      "snapshot_ref": 6,
+      "detail": ""
+    },
+    {
+      "action_index": 2,
+      "item_id": "c_001",
+      "phase": "canary",
+      "idempotency_key": "r-20261114-071507-7b28:2:c_001",
+      "status": "done",
+      "external_ref": "111:106",
+      "snapshot_ref": null,
+      "detail": ""
+    },
+    {
+      "action_index": 2,
+      "item_id": "c_002",
+      "phase": "batch",
+      "idempotency_key": "r-20261114-071507-7b28:2:c_002",
+      "status": "done",
+      "external_ref": "999:107",
+      "snapshot_ref": null,
+      "detail": ""
+    },
+    {
+      "action_index": 2,
+      "item_id": "c_006",
+      "phase": "batch",
+      "idempotency_key": "r-20261114-071507-7b28:2:c_006",
+      "status": "done",
+      "external_ref": "999:108",
+      "snapshot_ref": null,
+      "detail": ""
+    },
+    {
+      "action_index": 2,
+      "item_id": "c_007",
+      "phase": "batch",
+      "idempotency_key": "r-20261114-071507-7b28:2:c_007",
+      "status": "done",
+      "external_ref": "999:109",
+      "snapshot_ref": null,
+      "detail": ""
+    }
+  ]
+}

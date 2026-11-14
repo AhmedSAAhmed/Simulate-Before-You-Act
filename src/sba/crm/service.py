@@ -71,6 +71,18 @@ class CrmService:
             ).mappings().all()
         return [_contact(r) for r in rows if label in (r["labels"] or [])]
 
+    def label_counts(self) -> dict[str, int]:
+        """Every label in use on active contacts, with how many contacts carry it."""
+        with self.engine.connect() as conn:
+            rows = conn.execute(
+                select(contacts.c.labels).where(contacts.c.sandbox == self.sandbox, contacts.c.deleted_at.is_(None))
+            ).all()
+        counts: dict[str, int] = {}
+        for (labels,) in rows:
+            for label in labels or []:
+                counts[label] = counts.get(label, 0) + 1
+        return counts
+
     def duplicate_charges_on(self, day: date) -> list[dict[str, Any]]:
         with self.engine.connect() as conn:
             rows = conn.execute(
@@ -140,6 +152,20 @@ class CrmService:
                 )
             ).mappings().all()
         return [dict(r) for r in rows]
+
+    def ledger_for_run(self, run_id: str) -> list[dict[str, Any]]:
+        with self.engine.connect() as conn:
+            rows = conn.execute(
+                select(wallet_ledger).where(wallet_ledger.c.sandbox == self.sandbox, wallet_ledger.c.run_id == run_id)
+            ).mappings().all()
+        return [dict(r) for r in rows]
+
+    def charge(self, charge_id: str) -> dict[str, Any] | None:
+        with self.engine.connect() as conn:
+            row = conn.execute(
+                select(charges).where(charges.c.sandbox == self.sandbox, charges.c.id == charge_id)
+            ).mappings().first()
+        return dict(row) if row else None
 
     def get_snapshot(self, snapshot_id: int) -> dict[str, Any]:
         with self.engine.connect() as conn:

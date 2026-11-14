@@ -1,0 +1,81 @@
+{
+  "outcome": "drift",
+  "summary": "The data changed after approval (4 difference(s)). Nothing was written. Review the new simulation and approve it again.",
+  "diffs": [
+    {
+      "action_index": 0,
+      "record_id": "ch_d01",
+      "field": "effect",
+      "predicted": {
+        "action_index": 0,
+        "system": "crm.wallet",
+        "record_id": "ch_d01",
+        "subject": "Demo Reviewer (c_001)",
+        "before": {
+          "wallet_balance": 2000,
+          "credited_for_charge": 0,
+          "currency": "BHD"
+        },
+        "after": {
+          "wallet_balance": 14500,
+          "credited_for_charge": 12500,
+          "credit": 12500,
+          "contact_id": "c_001",
+          "currency": "BHD"
+        }
+      },
+      "observed": null
+    },
+    {
+      "action_index": 1,
+      "record_id": "c_001",
+      "field": "effect",
+      "predicted": {
+        "action_index": 1,
+        "system": "telegram",
+        "record_id": "c_001",
+        "subject": "Demo Reviewer (c_001)",
+        "before": {
+          "messages_from_this_run": 0
+        },
+        "after": {
+          "route": "own chat",
+          "chat_id": "111",
+          "language": "en",
+          "text": "Hi Demo Reviewer, we charged you twice by mistake yesterday. We've credited BHD 12.500 back to your wallet, and there's nothing you need to do. Sorry for the trouble. The Support Team"
+        }
+      },
+      "observed": null
+    },
+    {
+      "action_index": 2,
+      "record_id": "c_001",
+      "field": "effect",
+      "predicted": {
+        "action_index": 2,
+        "system": "crm.contacts",
+        "record_id": "c_001",
+        "subject": "Demo Reviewer (c_001)",
+        "before": {
+          "labels": []
+        },
+        "after": {
+          "labels": [
+            "dup-charge-2026-11"
+          ]
+        }
+      },
+      "observed": null
+    },
+    {
+      "action_index": 0,
+      "record_id": "ch_d01",
+      "field": "blocker",
+      "predicted": null,
+      "observed": "Demo Reviewer (c_001): a person already credited BHD 2.500 of BHD 12.500; including it credits the remaining BHD 10.000."
+    }
+  ],
+  "unpredicted": {},
+  "invariants": [],
+  "rollback": []
+}

@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import difflib
+from collections import Counter
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Any
@@ -15,15 +18,13 @@ from sba.adapters.base import (
     Target,
     from_action_targets,
     idempotency_key,
+    check_shape,
     item_controls,
-    require_keys,
 )
 from sba.crm.service import CrmService
-from sba.domain.models import Action, ActionKind, Blocker, Effect, SideEffect
+from sba.domain.models import Action, ActionKind, Blocker, Effect, InvariantResult, SideEffect
 from sba.domain.money import fmt
 from sba.domain.policy import SOFT_DELETE_WINDOW
-
-CONTROL_KEYS = frozenset({"exclude", "override"})
 
 
 def _who(contact: dict[str, Any]) -> str:
@@ -39,9 +40,7 @@ class CreditAdapter:
     system: str = "crm.wallet"
 
     def simulate(self, index: int, action: Action, ctx: SimContext) -> ActionSim:
-        require_keys("selector", action.selector, frozenset({"charges_created_on", "duplicates_only"}),
-                     frozenset({"charges_created_on", "duplicates_only"}))
-        require_keys("params", action.params, CONTROL_KEYS)
+        check_shape(action, index)
         if action.selector["duplicates_only"] is not True:
             raise SelectorError("issue_credit only returns duplicate charges: set duplicates_only to true")
         try:
@@ -126,9 +125,30 @@ class CreditAdapter:
         return ExecResult("rolled_back", external_ref=f"ledger:{entry}")
 
     def observe(self, effect: Effect) -> dict[str, Any]:
-        cid = effect.after["contact_id"]
-        return {"wallet_balance": self.crm.wallet_balance(cid),
-                "credited_for_charge": self.crm.credited_for_charge(effect.record_id)}
+        # Per charge only: a wallet can hold several credits, so wallets are checked in invariants().
+        return {"credited_for_charge": self.crm.credited_for_charge(effect.record_id)}
+
+    def invariants(self, effects: list[Effect], run_id: str) -> list[InvariantResult]:
+        if not effects:
+            return []
+        over = []
+        for e in effects:
+            charge = self.crm.charge(e.record_id)
+            credited = self.crm.credited_for_charge(e.record_id)
+            if charge is None or credited > charge["amount_minor"]:
+                over.append(f"{e.record_id} credited {credited}")
+        per_charge = Counter(r["charge_id"] for r in self.crm.ledger_for_run(run_id) if r["kind"] == "credit")
+        twice = sorted(c for c, n in per_charge.items() if n > 1)
+        predicted: dict[str, int] = {}
+        for e in effects:  # effects are in order, so the last one per wallet is its final balance
+            predicted[e.after["contact_id"]] = e.after["wallet_balance"]
+        wrong = [f"{cid}: {self.crm.wallet_balance(cid)} vs {want}" for cid, want in predicted.items()
+                 if self.crm.wallet_balance(cid) != want]
+        return [
+            InvariantResult(name="credit_within_duplicate", held=not over, detail="; ".join(over)),
+            InvariantResult(name="no_charge_credited_twice", held=not twice, detail=", ".join(twice)),
+            InvariantResult(name="wallets_match_prediction", held=not wrong, detail="; ".join(wrong)),
+        ]
 
 
 @dataclass
@@ -136,12 +156,12 @@ class LabelAdapter:
     """`update_contact_attributes`: add or remove labels. Reversible; may trigger automations."""
 
     crm: CrmService
+    recall: Callable[[str], bool] | None = None  # deletes a sent notice by its delivery ref
     kind: ActionKind = ActionKind.UPDATE_CONTACT_ATTRIBUTES
     system: str = "crm.contacts"
 
     def simulate(self, index: int, action: Action, ctx: SimContext) -> ActionSim:
-        require_keys("selector", action.selector, frozenset({"from_action", "label"}))
-        require_keys("params", action.params, CONTROL_KEYS | {"add_labels", "remove_labels"})
+        check_shape(action, index)
         add = _labels(action.params.get("add_labels", []), "add_labels")
         remove = _labels(action.params.get("remove_labels", []), "remove_labels")
         if not add and not remove:
@@ -149,6 +169,8 @@ class LabelAdapter:
         exclude, override = item_controls(action)
         contact_ids = self._resolve(index, action.selector, ctx)
         ctx.read("crm", f"selector:{index}", "contact_ids", contact_ids)
+        if not contact_ids and "label" in action.selector:
+            return ActionSim(blockers=[no_label_match(index, action.selector["label"], self.crm)])
 
         sim = ActionSim(rollback="Restore each contact's previous labels from the snapshot, and close any "
                                  "tickets that automations opened because of this run.")
@@ -181,7 +203,8 @@ class LabelAdapter:
             key = f"rule:{rule_id}"
             what = (f"Automation '{names[rule_id]}' fires for {len(hit)} contacts: it opens {len(hit)} billing "
                     f"tickets and sends {len(hit)} Telegram notices.")
-            sim.side_effects.append(SideEffect(description=what, likelihood="high", source="engine"))
+            sim.side_effects.append(SideEffect(description=what, likelihood="high", source="engine",
+                                               expected={"tickets_opened": len(hit), "notices_sent": len(hit)}))
             if key in override:
                 sim.notes.append(f"{what} Accepted by the operator: {override[key]}")
             else:
@@ -208,16 +231,25 @@ class LabelAdapter:
             return ExecResult("failed", detail="no snapshot to restore from")
         labels = self.crm.get_snapshot(result.snapshot_ref)["data"]["labels"]
         self.crm.set_labels(effect.record_id, labels, actor=f"agent:{run_id}:rollback", run_id=run_id)
-        closed = 0
+        closed = recalled = 0
         for ticket in self.crm.tickets_for_run(run_id):
             if ticket["contact_id"] == effect.record_id and ticket["status"] == "open":
                 self.crm.close_ticket(ticket["id"])
                 closed += 1
-        return ExecResult("rolled_back", detail=f"labels restored; {closed} automation tickets closed")
+        for notice in self.crm.notifications_for_run(run_id):
+            if notice["contact_id"] == effect.record_id and notice["delivery_ref"] and self.recall:
+                recalled += int(self.recall(notice["delivery_ref"]))
+        return ExecResult("rolled_back", detail=f"labels restored; {closed} automation tickets closed; "
+                                                f"{recalled} notices recalled")
 
     def observe(self, effect: Effect) -> dict[str, Any]:
         contact = self.crm.contact(effect.record_id)
         return {"labels": sorted(contact["labels"]) if contact else None}
+
+    def side_observations(self, run_id: str) -> dict[str, int]:
+        """Effects the CRM produced on its own because of this run (automations)."""
+        opened = [t for t in self.crm.tickets_for_run(run_id) if t["source"].startswith("automation:")]
+        return {"tickets_opened": len(opened), "notices_sent": len(self.crm.notifications_for_run(run_id))}
 
 
 @dataclass
@@ -229,13 +261,16 @@ class DeleteAdapter:
     system: str = "crm.contacts"
 
     def simulate(self, index: int, action: Action, ctx: SimContext) -> ActionSim:
-        require_keys("selector", action.selector, frozenset({"label"}), frozenset({"label"}))
-        require_keys("params", action.params, CONTROL_KEYS)
+        check_shape(action, index)
         label = _labels([action.selector["label"]], "label")[0]
         exclude, override = item_controls(action)
         purge_at = ctx.now + SOFT_DELETE_WINDOW
         found = self.crm.contacts_with_label(label)
         ctx.read("crm", f"selector:{index}", "contact_ids", [c["id"] for c in found])
+        if not found:
+            sim = ActionSim()
+            sim.blockers.append(no_label_match(index, label, self.crm))
+            return sim
         sim = ActionSim(rollback=f"Undelete from the snapshot any time before the purge at "
                                  f"{purge_at:%Y-%m-%d %H:%M} UTC; after the purge the records are gone.")
         for contact in found:
@@ -281,6 +316,15 @@ class DeleteAdapter:
         if contact is None:
             return {"status": "purged"}
         return {"status": "soft-deleted" if contact["deleted_at"] else "active"}
+
+
+def no_label_match(index: int, label: str, crm: CrmService) -> Blocker:
+    """A label selector that matches nothing usually means a typo, so name the closest real label."""
+    counts = crm.label_counts()
+    close = difflib.get_close_matches(label, list(counts), n=1, cutoff=0.6)
+    hint = f" Did you mean '{close[0]}' ({counts[close[0]]} contacts)?" if close else ""
+    return Blocker(action_index=index, record_id="plan", rule="empty_selector", hard=True,
+                   detail=f"action {index}: no contact has the label '{label}', so it would do nothing.{hint}")
 
 
 def _labels(value: Any, where: str) -> list[str]:

@@ -44,6 +44,11 @@ def simulate(
                                     detail=f"action {i} ({action.kind}): {err}"))
             continue
         ctx.targets[i] = result.targets
+        if not (result.effects or result.blockers or result.notes):
+            # An action that touches nothing isn't what the operator asked for: make someone look.
+            result.blockers.append(Blocker(action_index=i, record_id="plan", rule="empty_selector", hard=True,
+                                           detail=f"action {i} ({action.kind}) matched nothing, so it would do "
+                                                  f"nothing. Check its selector."))
         effects.extend(result.effects)
         blockers.extend(result.blockers)
         side_effects.extend(result.side_effects)

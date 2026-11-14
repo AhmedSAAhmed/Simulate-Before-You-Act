@@ -1,0 +1,9 @@
+{
+  "blind_spots": [
+    "automations"
+  ],
+  "critic": {
+    "model": "gemini:gemini-3.5-flash-lite",
+    "error": null
+  }
+}
